@@ -1,1 +1,1 @@
-import SigmaAlgebra
+import Probability
