@@ -1,1 +1,1 @@
-import Probability
+import RandomVariable

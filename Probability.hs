@@ -1,4 +1,7 @@
 -- Probability theory in Haskell.
+-- This is set-theoretic probability.
+-- Random Variables will be built on top of this.
+
 module Probability (
   ProbabilitySpace,
   Event,

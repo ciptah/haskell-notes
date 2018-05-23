@@ -13,6 +13,7 @@ module Sets (
   thereExists,
   unionAll,
   asList,
+  fromList,
   isDisjoint,
   isAllDisjoint,
   countableProduct,
@@ -70,6 +71,10 @@ unionAll sets = foldr (union) EmptySet sets
 asList :: Set a -> [a]
 asList EmptySet = []
 asList _ = error "Not implemented"
+
+fromList :: [a] -> Set a
+fromList [] = EmptySet
+fromList _ = error "Not implemented"
 
 -- Disjoint, aka no intersection.
 isDisjoint :: Set a -> Set a -> Bool
