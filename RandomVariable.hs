@@ -63,8 +63,10 @@ isDiscrete = error "Not implemented"
 isDiscreteFn :: (Double -> Double) -> Bool
 isDiscreteFn = error "Not implemented"
 
+-- TODO: There's a better definition here that involves support,
+-- replace this after reviewing
 isPMF :: PMF a -> Bool
 isPMF (StrictPMF (RandomVariable ps rv)) = isDiscrete (events ps)
 isPMF (ArbitraryPMF pmf) = -- Shortcut when the RV isn't known.
-    isDiscreteFn pmf && (forAll (asList Reals) $ \x -> pmf x >= 0 && x <= 1.0)
+    isDiscreteFn pmf && (forAll Reals $ \x -> pmf x >= 0 && x <= 1.0)
     && (sum $ map pmf (asList Reals)) == 1.0
