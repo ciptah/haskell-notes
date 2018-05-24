@@ -6,6 +6,7 @@ module Sets (
   Collection,
   RealNum,
   reals,
+  r1, r2,
   integers,
   isEmpty,
   member,
@@ -47,7 +48,9 @@ data Set w = EmptySet
     | forall w. (Ord w) => Interval w w
 
 reals = AllInType :: Set RealNum
+r1 = reals
 integers = AllInType :: Set Integer
+r2 = AllInType :: Set (RealNum, RealNum)
 
 instance Show (Set a) where
   show EmptySet = "{}"
