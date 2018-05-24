@@ -6,7 +6,8 @@ module Analysis (
   onto,
   upperBounds,
   lowerBounds,
-  sup, inf
+  supremum,
+  infimum
 ) where
 
 import Sets
@@ -39,10 +40,10 @@ lowerBounds = bounds Lower
 
 -- Sup: Get the one value from all upper bounds that's less than all other
 -- upper bounds.
-sup :: Set RealNum -> Maybe RealNum
-sup set = singleton $ b % \x -> forAll b $ \y -> x <= y -- least upper bound
+supremum :: Set RealNum -> Maybe RealNum
+supremum set = singleton $ b % \x -> forAll b $ \y -> x <= y -- least upper bound
     where b = upperBounds set
 
-inf :: Set RealNum -> Maybe RealNum
-inf set = singleton $ b % \x -> forAll b $ \y -> x >= y -- most lower bound
+infimum :: Set RealNum -> Maybe RealNum
+infimum set = singleton $ b % \x -> forAll b $ \y -> x >= y -- most lower bound
     where b = lowerBounds set
