@@ -16,14 +16,14 @@ import Sets
 import Analysis
 import Data.Maybe (Maybe, isJust)
 
-type PositiveInteger = Integer -- Only an alias
-type Sequence a = Integer -> a
+type PositiveInteger = Word -- Only an alias
+type Sequence a = PositiveInteger -> a
 
 data Convergence a = NegativeInfinity | PositiveInfinity | Finite a
 
 nonNegativeReals = Reals % (\x -> x >= 0) :: Set RealNum
 positiveReals = Reals % (\x -> x > 0) :: Set RealNum
-positiveIntegers = Integers % (\x -> x > 0) :: Set Integer
+positiveIntegers = Integers % (\x -> x > 0) :: Set PositiveInteger
 
 possibleConvergences = (
   Singleton NegativeInfinity
