@@ -61,5 +61,5 @@ isDiscreteFn = error "Not implemented"
 isPMF :: PMF a -> Bool
 isPMF (StrictPMF (RandomVariable ps rv)) = isDiscrete (events ps)
 isPMF (ArbitraryPMF pmf) = -- Shortcut when the RV isn't known.
-    isDiscreteFn pmf && (forAll Reals $ \x -> pmf x >= 0 && x <= 1.0)
-    && (sum $ fmap pmf Reals) == 1.0
+    isDiscreteFn pmf && (forAll reals $ \x -> pmf x >= 0 && x <= 1.0)
+    && (sum $ fmap pmf reals) == 1.0

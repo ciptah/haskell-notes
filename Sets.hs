@@ -1,8 +1,12 @@
+{-# LANGUAGE ExistentialQuantification #-}
 -- Set theory formalized in Haskell.
 
 module Sets (
-  Set(EmptySet, Singleton, Integers, Reals),
+  Set(EmptySet, Singleton, AllInType),
   Collection,
+  RealNum,
+  reals,
+  integers,
   isEmpty,
   member,
   isSubsetOf,
@@ -26,6 +30,7 @@ import Data.Maybe (Maybe)
 
 -- Not "strictly" true but close enough for this discussion.
 type Collection = Set
+type RealNum = Double
 
 -- Mathematical "For all"
 forAll :: (Foldable t) => t a -> (a -> Bool) -> Bool
@@ -36,7 +41,21 @@ thereExists :: (Foldable t) => t a -> (a -> Bool) -> Bool
 thereExists s pred = foldr (\x z -> (pred x) || z) False s
 
 -- A (mathematical) set of x. Some examples.
-data Set w = EmptySet | Singleton w | Reals | Integers deriving (Eq, Show)
+data Set w = EmptySet
+    | Singleton w
+    | AllInType -- Includes everything defined by the type.
+    | forall w. (Ord w) => Interval w w
+
+reals = AllInType :: Set RealNum
+integers = AllInType :: Set Integer
+
+instance Show (Set a) where
+  show EmptySet = "{}"
+  show x = error "Not Implemented"
+
+instance Eq (Set a) where
+  (==) EmptySet EmptySet = True
+  (==) x y = error "Not Implemented"
 
 instance Foldable Set where
   foldr f z EmptySet = z

@@ -15,8 +15,6 @@ module Analysis (
 
 import Sets
 
-type RealNum = Double
-
 assert :: Bool -> Bool
 assert True = True
 assert False = error "Assertion failed!"
@@ -38,7 +36,7 @@ data BoundType = Upper | Lower
 
 -- Upper/lower bounds
 bounds :: BoundType -> Set RealNum -> Set RealNum
-bounds bt set = Reals % \r -> forAll set $ \x -> r `bounds` x
+bounds bt set = reals % \r -> forAll set $ \x -> r `bounds` x
     where bounds = boundFor bt
           boundFor Upper = (>=) -- r >= x
           boundFor Lower = (<=) -- r <= x

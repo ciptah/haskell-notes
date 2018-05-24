@@ -21,14 +21,14 @@ type Sequence a = PositiveInteger -> a
 
 data Convergence a = NegativeInfinity | PositiveInfinity | Finite a
 
-nonNegativeReals = Reals % (\x -> x >= 0) :: Set RealNum
-positiveReals = Reals % (\x -> x > 0) :: Set RealNum
-positiveIntegers = Integers % (\x -> x > 0) :: Set PositiveInteger
+nonNegativeReals = reals % (\x -> x >= 0) :: Set RealNum
+positiveReals = reals % (\x -> x > 0) :: Set RealNum
+positiveIntegers = fmap fromIntegral $ integers % (\x -> x > 0) :: Set PositiveInteger
 
 possibleConvergences = (
   Singleton NegativeInfinity
   `union` Singleton PositiveInfinity
-  `union` (fmap Finite Reals))
+  `union` (fmap Finite reals))
 
 -- Definition of convergence (3.10)
 -- Definition of convergence to infinity (3.12)
@@ -59,4 +59,4 @@ convergence seq = only $ possibleConvergences % \x -> converges seq x
 -- is bounded.
 prop319 :: Sequence RealNum -> Bool
 prop319 seq = assert $ if isJust (convergence seq)
-  then (bounded $ image positiveIntegers seq Reals) else True
+  then (bounded $ image positiveIntegers seq reals) else True
