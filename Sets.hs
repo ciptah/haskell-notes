@@ -16,7 +16,7 @@ module Sets (
   fromList,
   isDisjoint,
   isAllDisjoint,
-  countableProduct,
+  star,
   countableUnions,
   singleton,
   (%)
@@ -93,15 +93,18 @@ isAllDisjoint :: (Eq a) => [Set a] -> Bool
 isAllDisjoint sets = forAll cartesianProduct $ \(x, y) -> x `isDisjoint` y
     where cartesianProduct = [ (x, y) | x <- sets, y <- sets ]
 
--- Get all possible N-fold cartesian products
-countableProduct :: Set a -> Set [a]
-countableProduct set = fromList result
+-- From a set S = {a, b, c, ...}
+-- Build a set S* = {0, a, b, c, ..., aa, ab, ac, ..., }
+-- Also known as a Kleene star.
+-- This is intentionally a list, so aaba /= aba /= baaa
+star :: Set a -> Set [a]
+star set = fromList result
     where result = [ add:cur | cur <- []:result, add <- (asList set) ]
 
 -- Given a set of sets, return a sequence of sets made of the countable
 -- unions of the elements in the set.
 countableUnions :: Collection (Set a) -> Set (Set a)
-countableUnions sets = fmap unionAll $ countableProduct sets
+countableUnions sets = fmap unionAll $ star sets
 
 -- Unpack: If singleton, output inner value. Otherwise, None.
 singleton :: Set a -> Maybe a

@@ -37,10 +37,11 @@ sampleSpace = unionAll . asList . asSet
 
 -- Constructor that checks the set of sets against w
 sigmaAlgebra :: (Eq w) => Set w -> Set (Set w) -> SigmaAlgebra w
-sigmaAlgebra o s | isValidSigmaAlgebra o (SigmaAlgebra s) = (SigmaAlgebra s)
-                 | sampleSpace (SigmaAlgebra s) /= o = error "Can't happen"
+sigmaAlgebra o s | isValidSigmaAlgebra o candidate = candidate -- valid
+                 | sampleSpace candidate /= o = error "Can't happen"
                  | otherwise = error "Not a valid sigma-algebra for the set"
+  where candidate = SigmaAlgebra s
 
 -- All "pairwise disjoint" sets of sets in the sigma-algebra.
 allDisjoint :: (Eq a) => SigmaAlgebra a -> Set [Set a]
-allDisjoint f = countableProduct (asSet f) % isAllDisjoint
+allDisjoint f = star (asSet f) % isAllDisjoint
