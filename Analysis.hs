@@ -1,6 +1,7 @@
 -- https://www.math.ucdavis.edu/~hunter/intro_analysis_pdf/intro_analysis.pdf
 
 module Analysis (
+  RealNum,
   image, -- aka range
   preimage,
   onto,
