@@ -23,7 +23,7 @@ asSet :: SigmaAlgebra a -> Collection (Set a)
 asSet (SigmaAlgebra x) = x
 
 -- See Definition 2.2 of DS-GA 1002 notes probability_basics.pdf
-isValidSigmaAlgebra :: Set w -> SigmaAlgebra w -> Bool
+isValidSigmaAlgebra :: (Eq w) => Set w -> SigmaAlgebra w -> Bool
 isValidSigmaAlgebra o f = 
     (forAll fset $ \s -> (o `minus` s) `member` fset)
     && (forAll (countableUnions fset) $ \u -> u `member` fset)
@@ -36,11 +36,11 @@ sampleSpace :: SigmaAlgebra a -> Set a
 sampleSpace = unionAll . asList . asSet
 
 -- Constructor that checks the set of sets against w
-sigmaAlgebra :: Set w -> Set (Set w) -> SigmaAlgebra w
+sigmaAlgebra :: (Eq w) => Set w -> Set (Set w) -> SigmaAlgebra w
 sigmaAlgebra o s | isValidSigmaAlgebra o (SigmaAlgebra s) = (SigmaAlgebra s)
                  | sampleSpace (SigmaAlgebra s) /= o = error "Can't happen"
                  | otherwise = error "Not a valid sigma-algebra for the set"
 
 -- All "pairwise disjoint" sets of sets in the sigma-algebra.
-allDisjoint :: SigmaAlgebra a -> [[Set a]]
-allDisjoint f = filter isAllDisjoint $ countableProduct $ asSet f
+allDisjoint :: (Eq a) => SigmaAlgebra a -> Set [Set a]
+allDisjoint f = countableProduct (asSet f) % isAllDisjoint
