@@ -1,7 +1,7 @@
 -- Set theory formalized in Haskell.
 
 module Sets (
-  Set(EmptySet, Singleton, Reals),
+  Set(EmptySet, Singleton, Integers, Reals),
   Collection,
   isEmpty,
   member,
@@ -36,7 +36,7 @@ thereExists :: (Foldable t) => t a -> (a -> Bool) -> Bool
 thereExists s pred = foldr (\x z -> (pred x) || z) False s
 
 -- A (mathematical) set of x. Some examples.
-data Set w = EmptySet | Singleton w | Reals deriving (Eq, Show)
+data Set w = EmptySet | Singleton w | Reals | Integers deriving (Eq, Show)
 
 instance Foldable Set where
   foldr f z EmptySet = z

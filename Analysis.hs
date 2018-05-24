@@ -2,11 +2,13 @@
 
 module Analysis (
   RealNum,
+  assert,
   image, -- aka range
   preimage,
   onto,
   upperBounds,
   lowerBounds,
+  bounded,
   supremum,
   infimum
 ) where
@@ -14,6 +16,10 @@ module Analysis (
 import Sets
 
 type RealNum = Double
+
+assert :: Bool -> Bool
+assert True = True
+assert False = error "Assertion failed!"
 
 -- Domain, Codomain, Function, Range
 image :: (Eq b) => Set a ->(a -> b) -> Set b -> Set b
@@ -38,6 +44,9 @@ bounds bt set = Reals % \r -> forAll set $ \x -> r `bounds` x
           boundFor Lower = (<=) -- r <= x
 upperBounds = bounds Upper
 lowerBounds = bounds Lower
+
+bounded :: Set RealNum -> Bool
+bounded set = (upperBounds set) /= EmptySet && (lowerBounds set) /= EmptySet
 
 -- Sup: Get the one value from all upper bounds that's less than all other
 -- upper bounds.
