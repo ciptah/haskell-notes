@@ -13,8 +13,6 @@ module Sets (
   intersect, union, minus, complement
   -- isEmpty,
   -- isSubsetOf,
-  -- minus,
-  -- union,
   -- forAll,
   -- unionAll,
   -- asList,
@@ -103,6 +101,9 @@ infixl 6 ∪ -- u222A
 infixl 7 ∩ -- u2229
 (∪) = union
 (∩) = intersect
+
+unionAll = (Foldable t) => t (Set a) -> Set a
+unionAll = foldr (∪) empty
 
 --
 --
