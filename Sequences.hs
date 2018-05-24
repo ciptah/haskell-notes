@@ -52,7 +52,11 @@ convergence seq = only $ possibleConvergences % \x -> converges seq x
         only _ = error "Impossible due to Prop 3.11"
 
 -- A convergent sequence is always bounded. If convergent, then bounded.
--- "A sequence is bounded" is just the image of the values of the sequence.
+-- NOTE: not the converse: Bounded does not imply convergent.
+--   HOWEVER, bounded does imply existence of convergent subsequence
+--   (Bolzano-Weierstrass). Will define later.
+-- "A sequence is bounded" means the image of the values of the sequence
+-- is bounded.
 prop319 :: Sequence RealNum -> Bool
 prop319 seq = assert $ if isJust (convergence seq)
   then (bounded $ image positiveIntegers seq Reals) else True
