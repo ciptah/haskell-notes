@@ -15,14 +15,13 @@ module Sets (
   intersect, union, minus, complement, (∪), (∩), -- u222a, u2229
   unionAll, intersectAll,
   image, preimage,
-  -- isSubsetOf,
-  -- isDisjoint,
-  -- isAllDisjoint,
-  -- star,
-  -- countableUnions,
+  cartesian, (⨯), -- u2a2f
+  isSubsetOf, isDisjoint,
   isSingleton, singleton,
-  reals, r1, integers, r2, nonnegatives, naturals,
-  empty -- The empty set.
+  isPairwiseDisjoint, isAllDisjoint,
+  star,
+  countableUnions,
+  reals, r1, integers, r2, nonnegatives, naturals, empty
 ) where
 
 import Data.Maybe (Maybe)
@@ -120,6 +119,7 @@ image fn domain =
 -- Cartesian product.
 cartesian :: Set a -> Set b -> Set (a, b)
 cartesian setA setB = Everything % \(x, y) -> x ∈ setA && y ∈ setB
+(⨯) = cartesian
 
 -- Singleton means there are two things in the set that aren't the same.
 isSingleton :: (Eq a) => Set a -> Bool
@@ -134,36 +134,33 @@ singleton set | set == empty = Nothing
               | otherwise = Nothing
 
 -- isEmpty isn't necessary. Just compare with empty
-isSubsetOf :: Set a -> Set a -> Bool
+-- The empty set is disjoint with itself [wikipedia].
 a `isSubsetOf` b = a == (a ∩ b)
+x `isDisjoint` y = x ∩ y == empty
 
---
---
---
---
--- -- Disjoint, aka no intersection.
--- isDisjoint :: (Eq a) => Set a -> Set a -> Bool
--- isDisjoint x y = x `intersect` y == EmptySet
---
--- -- Are all the sets in the given list disjoint with one another?
--- isAllDisjoint :: (Eq a) => [Set a] -> Bool
--- isAllDisjoint sets = forAll cartesianProduct $ \(x, y) -> x `isDisjoint` y
---     where cartesianProduct = [ (x, y) | x <- sets, y <- sets ]
---
--- -- From a set S = {a, b, c, ...}
--- -- Build a set S* = {0, a, b, c, ..., aa, ab, ac, ..., }
--- -- Also known as a Kleene star.
--- -- This is intentionally a list, so aaba /= aba /= baaa
--- star :: Set a -> Set [a]
--- star set = fromList result
---     where result = [ add:cur | cur <- []:result, add <- (asList set) ]
---
--- -- Given a set of sets, return a sequence of sets made of the countable
--- -- unions of the elements in the set.
--- countableUnions :: Collection (Set a) -> Set (Set a)
--- countableUnions sets = fmap unionAll $ star sets
+-- isPairwiseDisjoint intentionally not from Set (Set a), but from [Set a].
+-- This is so the behavior in duplicate sets is defined (will return False)
+-- Take care not to include the set in the same indices as pairs
+isPairwiseDisjoint :: [Set a] -> Bool
+isPairwiseDisjoint sets = and $ map disjoint setPairs
+  where indices = [0..(length sets)]
+        indexPairs = [(x, y) | x <- indices, y <- indices]
+        diffPairs = filter (\(x, y) -> x /= y) indexPairs
+        setPairs = map (\(x, y) -> (sets!!x, sets!!y)) diffPairs
+        disjoint (x, y) = x `isDisjoint` y
+isAllDisjoint = isPairwiseDisjoint
 
+-- From a set S = {a, b, c, ...}
+-- Build a set S* = {0, a, b, c, ..., aa, ab, ac, ..., }
+-- Also known as a Kleene star.
+-- This is intentionally a list, so aaba /= aba /= baaa
+star :: Set a -> Set [a]
+star set = Everything % \xs -> and $ map (flip member set) xs
 
+-- Given a set of sets X, return the set of sets made by countable unions
+-- of elements of X.
+countableUnions :: Set (Set a) -> Set (Set a)
+countableUnions x = image unionAll $ star x
 
 -- Some examples.
 reals = Everything :: Set RealNum
