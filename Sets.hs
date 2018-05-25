@@ -148,7 +148,7 @@ star set = Everything % \xs -> and $ map (flip member set) xs
 -- of elements of X.
 countableUnions :: Set (Set a) -> Set (Set a)
 countableUnions x =
-    Everything % \y -> thereExists (star x) $ \seq -> unionAll x == y
+    Everything % \y -> thereExists (star x) $ \seq -> unionAll seq == y
 
 -- Some examples.
 reals = Everything :: Set RealNum
