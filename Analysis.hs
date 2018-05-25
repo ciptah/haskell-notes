@@ -40,6 +40,8 @@ halts fn input = error "Turing is mad at you!"
 -- of the function is bigger than the given codomain, it gets truncated.
 
 -- Put a function inside this box to perform "formal analysis"
+-- Beyond having a proper codomain (so onto is well-defined), we also implement
+-- (Eq) on this type which is useful when putting boxfns into sets
 data Boxed a b = Box {
   naked :: a -> b,
   codomain :: Set b
