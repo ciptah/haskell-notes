@@ -3,14 +3,14 @@
 module Analysis (
   Boxed(Box),
   Bound,
+  halts,
   naked,
   codomain,
   compile,
   preimage, preimageOf,
   domain,
   image, range,
-  onto,
-  one2one,
+  onto, one2one, bijective,
   isUpperBound, isLowerBound, valueOf,
   bounds, upperBounds, lowerBounds,
   bounded,
@@ -19,6 +19,11 @@ module Analysis (
 ) where
 
 import Sets
+
+-- Whether the given function halts given the input. This is of course
+-- undecidable in the general case.
+halts :: (a -> b) -> a -> Bool
+halts fn input = error "Turing is mad at you!"
 
 -- We have to remember the codomain of a function because having only
 -- Everything as codomain is too restrictive.
@@ -78,6 +83,8 @@ one2one :: (Eq a, Eq b) => Boxed a b -> Bool
 one2one boxed = -- Alternative way of saying it.
   forAll (codomain boxed) $ \y -> isSingleton $ preimageOf (compile boxed) y
 
+bijective boxed = one2one boxed && onto boxed
+
 -- We're not going to expose these constructors.
 data Bound x = UpperBound x | LowerBound x
 isUpperBound (UpperBound _) = True
@@ -111,4 +118,21 @@ infimum set = singleton $ b % \x -> forAll b $ \y -> x >= y -- most lower bound
     where b = lowerBounds set
 
 -- Archimedaean property (Theorem 2.18)
-archimedaean = forAll' r1 \x -> thereExists naturals \n -> x < n
+archimedaean = forAll r1 $ \x -> thereExists naturals $ \n -> x < fromIntegral n
+
+-- Finiteness and cardinality.
+equalCardinality :: (Eq a, Eq b) => Set a -> Set b -> Bool
+equalCardinality x y = thereExists (Everything :: Set (Boxed a b)) $ (
+  \boxed -> domain boxed == x && range boxed == y && bijective boxed)
+
+-- All sets of the form {0, 1, ... n} for some n ∈ naturals
+-- Equivalently, meaning the set is bounded by 0 and n for some n
+indexSets :: Set (Set Integer)
+indexSets = Everything % \s -> bounded s && 1 ∈ lowerBounds s
+
+isFinite :: (Eq a) => Set a -> Bool
+isFinite x =
+  x == empty || (thereExists indexSets $ \ix -> x `equalCardinality` ix)
+
+countable x = isFinite x || x `equalCardinality` naturals
+
