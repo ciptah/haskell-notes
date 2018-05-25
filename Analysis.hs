@@ -109,3 +109,6 @@ supremum set = singleton $ b % \x -> forAll b $ \y -> x <= y -- least upper boun
 infimum :: (Ord x) => Set x -> Maybe x
 infimum set = singleton $ b % \x -> forAll b $ \y -> x >= y -- most lower bound
     where b = lowerBounds set
+
+-- Archimedaean property (Theorem 2.18)
+archimedaean = forAll' r1 \x -> thereExists naturals \n -> x < n
