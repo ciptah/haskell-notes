@@ -65,7 +65,8 @@ sequencers a b = mappers a b % \bf -> let f = compile bf in
 -- Finite sets are super easy because the inf is guaranteed to be included,
 -- so we can just repeatedly build using the inf.
 toList :: (Ord a) => Set a -> Maybe [a]
-toList set | isFinite set = Just $ minimum : (fromJust $ toList remainder)
+toList set | set == empty = [] -- Base case for finite case
+           | isFinite set = Just $ minimum : (fromJust $ toList remainder)
            | countable set && isJust seqs = Just $ fmap seq [1..]
            | otherwise = Nothing
   where minimum = fromJust $ infimum set
