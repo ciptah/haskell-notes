@@ -61,7 +61,8 @@ sequencers a b = mappers a b % \bf -> let f = compile bf in
     (x1 < x2 && f x1 < f x2) || (x1 >= x2 && f x1 >= f x2)
 
 -- Finally, we can turn into a list those sets that have a unique sequencer.
--- With maps it's impossible to get a unique mapper.
+-- With maps it's impossible to get a unique mapper, imagine swapping every
+-- two indices with each other.
 -- Finite sets are super easy because the inf is guaranteed to be included,
 -- so we can just repeatedly build using the inf.
 toList :: (Ord a) => Set a -> Maybe [a]
