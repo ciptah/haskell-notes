@@ -120,6 +120,7 @@ bounds set = Everything % \r -> forAll set $ \x -> r `bounds` x
   where (UpperBound r) `bounds` x = r >= x
         (LowerBound r) `bounds` x = r <= x
 
+-- Subset of Everything that are upper/lower bounds of a set
 upperBounds set = smap valueOf (bounds set % isUpperBound)
 lowerBounds set = smap valueOf (bounds set % isLowerBound)
 
