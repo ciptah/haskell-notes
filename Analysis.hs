@@ -34,6 +34,8 @@ halts fn input = error "Turing is mad at you!"
 -- Everything as codomain is too restrictive.
 -- For example, "Everything" might be Integers but I want 
 -- the codomain to be even numbers.
+--
+-- See: https://en.wikipedia.org/wiki/Codomain
 
 -- We lose the easy currying but we can get it later using tuples.
 -- We pair a function with its codomain. By definition if the "natural range"
@@ -51,6 +53,7 @@ data Boxed a b = Box {
 -- This means the function will blow up if it will return something outside the
 -- codomain, making the result "undefined".
 compile :: Boxed a b -> a -> b
+compile (Box fn Everything) = fn -- Aka no restrictions. Technically redundant
 compile (Box fn codomain) = out
   where out x | fn x ∈ codomain = fn x
               | otherwise = error "Truncated!"
@@ -84,7 +87,10 @@ range = image
 -- Dollar sign messes up both everything before and after it
 instance (Eq b) => Eq (Boxed a b) where
   ba == bb =
-    domain ba == domain bb && range ba == range bb &&
+    -- Here use codomain instead of range, because it has more "information":
+    -- Two functions that end up having the same range might have been declared
+    -- with different codomains.
+    domain ba == domain bb && codomain ba == codomain bb &&
     (forAll (domain ba) $ \x -> compile ba x == compile bb x)
 
 onto :: (Eq b) => Boxed a b -> Bool
@@ -145,10 +151,13 @@ mappers x y = (Everything :: Set (Boxed a b)) %
 equalCardinality :: (Eq a, Eq b) => Set a -> Set b -> Bool
 equalCardinality x y = mappers x y /= empty
 
--- All sets of the form {0, 1, ... n} for some n ∈ naturals
+-- All sets of the form {1, ... n} for some n ∈ naturals
 -- Equivalently, meaning the set is bounded by 0 and n for some n
+-- AND, that it is contiguous i.e. including all the numbers
 indexSets :: Set (Set Integer)
-indexSets = Everything % \s -> bounded s && 1 ∈ lowerBounds s
+indexSets = Everything % \s -> -- Any set of naturals that...
+  thereExists naturals $ \bigN -> -- has an upper bound and includes every n
+    supremum s == Just bigN && and [ n ∈ s | n <- [1..bigN] ] -- before N
 
 isFinite :: (Eq a) => Set a -> Bool
 isFinite x =
