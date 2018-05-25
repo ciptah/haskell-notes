@@ -16,10 +16,11 @@ module Sets (
   unionAll, intersectAll,
   cartesian, (⨯), -- u2a2f
   isSubsetOf, isDisjoint,
-  isSingleton, singleton,
+  isSingleton, singleton, singletonOf,
   isPairwiseDisjoint, isAllDisjoint,
   star,
   countableUnions,
+  smap,
   reals, r1, integers, r2, nonnegatives, naturals, empty
 ) where
 
@@ -149,6 +150,14 @@ star set = Everything % \xs -> and $ map (flip member set) xs
 countableUnions :: Set (Set a) -> Set (Set a)
 countableUnions x =
     Everything % \y -> thereExists (star x) $ \seq -> unionAll seq == y
+
+-- Throw out everything that isn't x.
+singletonOf :: (Eq a) => a -> (Set a)
+singletonOf x = Everything % \y -> y == x
+
+-- smap - Set map, similar to fmap, but only for Eq-able contents.
+smap :: (Eq b) => (a -> b) -> Set a -> Set b
+smap fn set = Everything % \y -> thereExists set $ \x -> fn x == y
 
 -- Some examples.
 reals = Everything :: Set RealNum
