@@ -14,6 +14,7 @@ module Dedekind (
 import Sets
 import Analysis
 import Data.Maybe (fromJust)
+import Data.Ratio (numerator, denominator)
 
 rationals = Everything :: Set Rational
 
@@ -41,7 +42,10 @@ toOriginal (a, b) = singleton $ (lowerBounds b ∩ b)
 
 -- All real numbers that are the lower bounds of the b-set
 -- There is a supremum (the least upper bound)
+toReal :: Cut Rational -> RealNum
 toReal (a, b) = fromJust $ supremum $ reals % \x ->
-  (forAll b $ \rat -> x <= rat)
+  (forAll b $ \rat -> cx x rat <= n rat)
+  where n rat = numerator rat * denominator rat
+        cx x rat = ceiling $ x * (fromIntegral $ denominator rat :: RealNum)
 
 isRealNumConstruction = dedekindCuts `equalCardinality` reals
