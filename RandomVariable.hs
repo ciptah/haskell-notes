@@ -11,6 +11,9 @@ import Sets
 import SigmaAlgebra
 import Probability
 import Analysis
+import Sequences
+
+import Data.Maybe (fromJust)
 
 -- We'll use the "Definition 2.1 + Remark 2.2" for this file.
 -- However we'll be using the Reals as the random variable sample space
@@ -26,10 +29,9 @@ data RandomVariable a = RandomVariable (ProbabilitySpace a) (a -> RealNum)
 -- of the original probability space's sigma-algebra.
 isRandomVariable :: (Eq a) => ProbabilitySpace a -> (a -> RealNum) -> Bool
 isRandomVariable pspace rv =
-  forAll borelSubsets $ \interval -> (inverseOf interval) `member` originalF
+  forAll borelSubsets $ \interval -> preimage rv interval ∈ measurableEvents
   where borelSubsets = asSet $ BorelReals :: Collection (Set RealNum)
-        originalF = asSet $ events pspace
-        inverseOf interval = preimage (outcomes pspace) rv interval
+        measurableEvents = asSet $ events pspace
 
 randomVariable :: (Eq a) =>
     ProbabilitySpace a -> (a -> RealNum) -> RandomVariable a
@@ -49,17 +51,12 @@ getPMFFormalRV :: PMF a -> RandomVariable a
 getPMFFormalRV (StrictPMF x) = x
 getPMFFormalRV _ = error "Unavailable"
 
--- (Wikipedia) "a measurable space whose underlying σ-algebra is discrete..."
-isDiscrete :: SigmaAlgebra a -> Bool
-isDiscrete = error "Not implemented"
-
-isDiscreteFn :: (RealNum -> RealNum) -> Bool
-isDiscreteFn = error "Not implemented"
-
--- TODO: There's a better definition here that involves support,
--- replace this after reviewing
-isPMF :: PMF a -> Bool
-isPMF (StrictPMF (RandomVariable ps rv)) = isDiscrete (events ps)
-isPMF (ArbitraryPMF pmf) = -- Shortcut when the RV isn't known.
-    isDiscreteFn pmf && (forAll reals $ \x -> pmf x >= 0 && x <= 1.0)
-    && (sum $ fmap pmf reals) == 1.0
+isPMF :: (Eq a) => PMF a -> Bool
+isPMF (StrictPMF (RandomVariable ps rv)) = countable $ outcomes ps
+isPMF (ArbitraryPMF pmf) = properBounds && isDiscrete && rangeSum == 1.0
+  where properBounds = 0.0 ∈ lowerBounds pmfImage && 1.0 ∈ upperBounds pmfImage
+        isDiscrete = countable pmfDomain
+        rangeSum = foldr (+) 0 $ fromJust $ toList pmfImage
+        pmfImage = range boxed
+        pmfDomain = domain boxed
+        boxed = Box pmf reals

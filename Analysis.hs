@@ -13,9 +13,14 @@ module Analysis (
   onto, one2one, bijective,
   isUpperBound, isLowerBound, valueOf,
   bounds, upperBounds, lowerBounds,
-  bounded,
+  upperBounded, lowerBounded, bounded,
   supremum,
-  infimum
+  infimum,
+  mappers,
+  equalCardinality,
+  indexSets,
+  isFinite,
+  countable
 ) where
 
 import Sets
@@ -50,7 +55,7 @@ compile (Box fn codomain) = out
 
 -- Find the preimage of a target set wrt the function.
 preimage :: (a -> b) -> Set b -> Set a
-preimage fn target = Everything % \x -> fn x `member` target
+preimage fn target = Everything % \x -> halts fn x && fn x `member` target
 
 -- Same of above but only for a single function.
 preimageOf :: (Eq b) => (a -> b) -> b -> Set a
@@ -73,6 +78,12 @@ image boxed = smap (compile boxed) Everything
 -- Alternative: codomain % \y -> thereExists (domain b) $ \x -> (fn x) == y
 range :: (Eq b) => Boxed a b -> Set b
 range = image
+
+-- Dollar sign messes up both everything before and after it
+instance (Eq b) => Eq (Boxed a b) where
+  ba == bb =
+    domain ba == domain bb && range ba == range bb &&
+    (forAll (domain ba) $ \x -> compile ba x == compile bb x)
 
 onto :: (Eq b) => Boxed a b -> Bool
 onto boxed = range boxed == codomain boxed
@@ -105,7 +116,9 @@ upperBounds set = smap valueOf (bounds set % isUpperBound)
 lowerBounds set = smap valueOf (bounds set % isLowerBound)
 
 bounded :: (Ord x) => Set x -> Bool
-bounded set = (upperBounds set) /= empty && (lowerBounds set) /= empty
+upperBounded set = upperBounds set /= empty
+lowerBounded set = lowerBounds set /= empty
+bounded set = upperBounded set && lowerBounded set
 
 -- Sup: Get the one value from all upper bounds that's less than all other
 -- upper bounds. May not exist depending on the set.
@@ -120,10 +133,15 @@ infimum set = singleton $ b % \x -> forAll b $ \y -> x >= y -- most lower bound
 -- Archimedaean property (Theorem 2.18)
 archimedaean = forAll r1 $ \x -> thereExists naturals $ \n -> x < fromIntegral n
 
+-- Find all (bijective mappings from one set to another)
+-- We can't "smap compile" here because functions aren't Eq-able
+mappers :: (Eq a, Eq b) => Set a -> Set b -> Set (Boxed a b)
+mappers x y = (Everything :: Set (Boxed a b)) %
+  \boxed -> domain boxed == x && range boxed == y && bijective boxed
+
 -- Finiteness and cardinality.
 equalCardinality :: (Eq a, Eq b) => Set a -> Set b -> Bool
-equalCardinality x y = thereExists (Everything :: Set (Boxed a b)) $ (
-  \boxed -> domain boxed == x && range boxed == y && bijective boxed)
+equalCardinality x y = mappers x y /= empty
 
 -- All sets of the form {0, 1, ... n} for some n ∈ naturals
 -- Equivalently, meaning the set is bounded by 0 and n for some n
@@ -135,4 +153,3 @@ isFinite x =
   x == empty || (thereExists indexSets $ \ix -> x `equalCardinality` ix)
 
 countable x = isFinite x || x `equalCardinality` naturals
-

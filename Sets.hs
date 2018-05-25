@@ -15,7 +15,7 @@ module Sets (
   intersect, union, minus, complement, (∪), (∩), -- u222a, u2229
   unionAll, intersectAll,
   cartesian, (⨯), -- u2a2f
-  isSubsetOf, isDisjoint,
+  isSubsetOf, (⊆), isDisjoint, -- u2286
   isSingleton, singleton, singletonOf,
   isPairwiseDisjoint, isAllDisjoint,
   star,
@@ -27,7 +27,14 @@ module Sets (
 import Data.Maybe (Maybe)
 
 -- A (mathematical) set of x.
--- Just by these definitions it's possible to 
+--
+-- The great thing about this construction is that it's possible to just
+-- declare impossibly complicated sets with one line. For example,
+--
+-- Everything :: Set (Integer -> Real -> Real, Maybe (Real -> [Integer]))
+--
+-- I don't have to worry about how to make all the elements. It's just there,
+-- and then I can filter it as needed.
 data Set w = Everything | Subset (w -> Bool) (Set w)
 
 -- A statement about some element with a certain property existing in the set.
@@ -125,6 +132,8 @@ singleton set | set == empty = Nothing
 -- The empty set is disjoint with itself [wikipedia].
 a `isSubsetOf` b = a == (a ∩ b)
 x `isDisjoint` y = x ∩ y == empty
+infix 4 ⊆ -- u2286
+(⊆) = isSubsetOf
 
 -- isPairwiseDisjoint intentionally not from Set (Set a), but from [Set a].
 -- This is so the behavior in duplicate sets is defined (will return False)
