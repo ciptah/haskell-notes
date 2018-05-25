@@ -66,12 +66,14 @@ sequencers a b = mappers a b % \bf -> let f = compile bf in
 -- Finite sets are super easy because the inf is guaranteed to be included,
 -- so we can just repeatedly build using the inf.
 toList :: (Ord a) => Set a -> Maybe [a]
-toList set | set == empty = [] -- Base case for finite case
+toList set | set == empty = Just [] -- Base case for finite case
            | isFinite set = Just $ minimum : (fromJust $ toList remainder)
-           | countable set && isJust seqs = Just $ fmap seq [1..]
+           -- Apply the unique sequencer (if available) to [1..]
+           | countable set = pure map <*> maybeSequencer <*> pure [1..]
            | otherwise = Nothing
   where minimum = fromJust $ infimum set
         remainder = set `minus` singletonOf minimum
-        seqs = singleton $ sequencers naturals set
-        seq = compile $ fromJust $ seqs
+        -- mseq :: Maybe (Integer -> a)
+        -- pure map <*> mseq => Maybe ([Integer] -> [a])
+        maybeSequencer = fmap compile $ singleton $ sequencers naturals set
 
