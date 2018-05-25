@@ -156,8 +156,8 @@ equalCardinality x y = mappers x y /= empty
 -- AND, that it is contiguous i.e. including all the numbers
 indexSets :: Set (Set Integer)
 indexSets = Everything % \s -> -- Any set of naturals that...
-  thereExists naturals $ \bigN -> -- has an upper bound and includes every n
-    supremum s == Just bigN && and [ n ∈ s | n <- [1..bigN] ] -- before N
+  thereExists naturals $ \bigN -> -- has an u.b. N and includes all n <= N
+    supremum s == Just bigN && (forAll naturals $ \n -> n ∈ s || n > bigN)
 
 isFinite :: (Eq a) => Set a -> Bool
 isFinite x =
