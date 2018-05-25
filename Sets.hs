@@ -14,7 +14,6 @@ module Sets (
   thereExists', forAll', eval, prove, thereExists, forAll,
   intersect, union, minus, complement, (∪), (∩), -- u222a, u2229
   unionAll, intersectAll,
-  image, preimage,
   cartesian, (⨯), -- u2a2f
   isSubsetOf, isDisjoint,
   isSingleton, singleton,
@@ -104,18 +103,6 @@ intersectAll = foldr (∩) Everything
 instance Eq (Set a) where
   x == y = forAll Everything $ \z -> (z ∈ x && z ∈ y) || (z ∉ x && z ∉ y)
 
--- Find the preimage of a set in the range under the function.
-preimage :: (a -> b) -> Set b -> Set a
-preimage fn image = Everything % \x -> fn x `member` image
-
--- I don't think it's possible to define this without using Eq or adding
--- some other constructor.
--- The image function is almost like fmap but only when b is Equalizable.
--- The (Eq b) is what's preventing Set from becoming an instance of Functor.
-image :: (Eq b) => (a -> b) -> Set a -> Set b
-image fn domain =
-    Everything % \y -> thereExists domain $ \x -> (fn x) == y
-
 -- Cartesian product.
 cartesian :: Set a -> Set b -> Set (a, b)
 cartesian setA setB = Everything % \(x, y) -> x ∈ setA && y ∈ setB
@@ -160,7 +147,8 @@ star set = Everything % \xs -> and $ map (flip member set) xs
 -- Given a set of sets X, return the set of sets made by countable unions
 -- of elements of X.
 countableUnions :: Set (Set a) -> Set (Set a)
-countableUnions x = image unionAll $ star x
+countableUnions x =
+    Everything % \y -> thereExists (star x) $ \seq -> unionAll x == y
 
 -- Some examples.
 reals = Everything :: Set RealNum
