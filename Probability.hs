@@ -19,6 +19,7 @@ module Probability (
 
 import Sets
 import SigmaAlgebra
+import Data.Maybe (isNothing)
 
 type Event a = Set a
 
@@ -32,28 +33,26 @@ probabilitySpace
     :: (Eq a) => Event a
     -> SigmaAlgebra a
     -> (Event a -> Double)
-    -> ProbabilitySpace a
+    -> Maybe (ProbabilitySpace a)
 probabilitySpace o f p
-    | not $ isValidSigmaAlgebra o f = error "Invalid"
-    | not $ isProbabilityMeasure p f = error "Invalid"
-    | otherwise  = ProbabilitySpace o f p
+    | not $ isValid o f = Nothing
+    | not $ isProbabilityMeasure p f = Nothing
+    | otherwise  = Just $ ProbabilitySpace o f p
 
 -- A probability measure is a function defined over the sets in a σ-algebra F
 -- such that... (Definition 2.4 of probability_basics.pdf)
 isProbabilityMeasure :: (Eq a) => (Event a -> Double) -> SigmaAlgebra a -> Bool
 isProbabilityMeasure p f =
-    (forAll (asSet f) $ \s -> p(s) >= 0)
-    -- Countable additivity.
-    && (forAll (allDisjoint f) $ \sets -> (p $ unionAll sets) == (sum $ map p sets))
-    -- Sums to 1.
-    && p (sampleSpace f) == 1.0
-
-measurable :: (Eq a) => ProbabilitySpace a -> (Event a) -> Bool
-measurable pspace event = event `member` (asSet $ events pspace)
+  (forAllSets f $ \s -> p(s) >= 0)
+  -- Countable additivity.
+  && (forAll disjoints $ \sets -> (p $ unionAll sets) == (sum $ map p sets))
+  -- Sums to 1.
+  && p (sampleSpace f) == 1.0
+  where disjoints = (star $ measurable f) % isAllDisjoint
 
 probability :: (Eq a) => ProbabilitySpace a -> (Event a) -> Double
 probability ps event
-    | measurable ps event = (probabilityMeasure ps) event
+    | events ps `canMeasure` event = probabilityMeasure ps $ event
     | otherwise = error "Invalid event for the given prob. space"
 
 -- Given 1st event, what's probability of second event

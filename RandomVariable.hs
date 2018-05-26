@@ -23,21 +23,22 @@ import Data.Maybe (fromJust)
 -- Given a probability space (Ω, F, P), a random variable X is a function...
 data RandomVariable a = RandomVariable (ProbabilitySpace a) (a -> RealNum)
 
+borelSubsets = undefined :: Set (Set RealNum) -- TODO
+
 -- Random variable is a function where if we take any borel subset of the
 -- real line, gathered all the outcomes that map into that subset according to
 -- the function, the set of outcomes (the inverse) we get should be a member
 -- of the original probability space's sigma-algebra.
 isRandomVariable :: (Eq a) => ProbabilitySpace a -> (a -> RealNum) -> Bool
-isRandomVariable pspace rv =
-  forAll borelSubsets $ \interval -> preimage rv interval ∈ measurableEvents
-  where borelSubsets = asSet $ BorelReals :: Collection (Set RealNum)
-        measurableEvents = asSet $ events pspace
+isRandomVariable pspace rv = domain (Box rv reals) == outcomes pspace &&
+  (forAll borelSubsets $ \interval -> preimage rv interval ∈ measurableEvents)
+  where measurableEvents = measurable $ events pspace
 
 randomVariable :: (Eq a) =>
-    ProbabilitySpace a -> (a -> RealNum) -> RandomVariable a
+    ProbabilitySpace a -> (a -> RealNum) -> Maybe (RandomVariable a)
 randomVariable ps rv
-    | isRandomVariable ps rv = RandomVariable ps rv
-    | otherwise = error "Invalid RV and PSpace combo"
+    | isRandomVariable ps rv = Just $ RandomVariable ps rv
+    | otherwise = Nothing
 
 -- Probability mass/density functions
 -- These can be defined according to the space + random variable, or
@@ -52,7 +53,8 @@ getPMFFormalRV (StrictPMF x) = x
 getPMFFormalRV _ = error "Unavailable"
 
 isPMF :: (Eq a) => PMF a -> Bool
-isPMF (StrictPMF (RandomVariable ps rv)) = countable $ outcomes ps
+isPMF (StrictPMF (RandomVariable ps rv)) =
+  countable $ image $ Box rv Everything
 isPMF (ArbitraryPMF pmf) = properBounds && isDiscrete && rangeSum == 1.0
   where properBounds = 0.0 ∈ lowerBounds pmfImage && 1.0 ∈ upperBounds pmfImage
         isDiscrete = countable pmfDomain
