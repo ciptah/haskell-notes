@@ -1,3 +1,5 @@
+{-# LANGUAGE ExistentialQuantification #-}
+
 -- Random Variables
 -- https://cims.nyu.edu/~cfgranda/pages/DSGA1002_fall16/material/random_variables.pdf
 
@@ -101,3 +103,17 @@ pmf (UnknownRV pf) =
 
 isDiscrete :: (Eq w) => Distribution w -> Bool
 isDiscrete dist = isJust $ pmf dist
+
+---------------------- Some Distributions ------------------
+
+-- Quick declaration of a 1-D integral.
+-- We'll work on deriving this later.
+integral :: (RealNum -> RealNum) -> Set RealNum -> RealNum
+integral density domain = error "magic!"
+
+normpdf :: RealNum -> RealNum -> RealNum -> RealNum
+normpdf mean var x =
+  1.0 / (sqrt $ 2 * pi * var) * (exp $ - (x - mean) ** 2 / 2 / var)
+
+normal :: forall w. Observation -> Observation -> Distribution w
+normal mean var = UnknownRV $ \event -> integral (normpdf mean var) event
