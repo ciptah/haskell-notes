@@ -8,7 +8,8 @@ module SigmaAlgebra (
   sigmaAlgebra,
   canMeasure,
   sampleSpace,
-  generate
+  generate,
+  borelR
 ) where
 
 import Sets
@@ -111,4 +112,4 @@ isOpenSet u = forAll u $ \x -> thereExists positiveReals $ \δ ->
     let nbrhd = pure (x - δ) `openInterval` pure (x - δ) in
     nbrhd /= u && nbrhd ⊆ u
 
-borelReals = generate reals isOpenSet
+borelR = generate reals isOpenSet

@@ -4,6 +4,7 @@
 
 module Probability (
   ProbabilitySpace,
+  Likelihood,
   Event,
   outcomes,
   events,
@@ -23,16 +24,21 @@ import Data.Maybe (isNothing)
 
 type Event a = Set a
 
+-- We'll define aliases because a lot of these RealNum's are confusing.
+type Likelihood = RealNum -- probability score, between 0 and 1
+type Measure a = Event a -> Likelihood
+
+-- a = type of sample space
 data ProbabilitySpace a = ProbabilitySpace {
   outcomes :: Event a,
   events :: SigmaAlgebra a,
-  probabilityMeasure :: Event a -> Double
+  probabilityMeasure :: Event a -> Likelihood
 }
 
 probabilitySpace
-    :: (Eq a) => Event a
+    :: (Eq a) => Set a
     -> SigmaAlgebra a
-    -> (Event a -> Double)
+    -> Measure a
     -> Maybe (ProbabilitySpace a)
 probabilitySpace o f p
     | not $ isValid o f = Nothing
@@ -41,7 +47,7 @@ probabilitySpace o f p
 
 -- A probability measure is a function defined over the sets in a σ-algebra F
 -- such that... (Definition 2.4 of probability_basics.pdf)
-isProbabilityMeasure :: (Eq a) => (Event a -> Double) -> SigmaAlgebra a -> Bool
+isProbabilityMeasure :: (Eq a) => Measure a -> SigmaAlgebra a -> Bool
 isProbabilityMeasure p f =
   (forAllSets f $ \s -> p(s) >= 0)
   -- Countable additivity.
@@ -50,23 +56,24 @@ isProbabilityMeasure p f =
   && p (sampleSpace f) == 1.0
   where disjoints = (star $ measurable f) % isAllDisjoint
 
-probability :: (Eq a) => ProbabilitySpace a -> (Event a) -> Double
+-- Give the probability of an event.
+probability :: (Eq a) => ProbabilitySpace a -> Event a -> Likelihood
 probability ps event
     | events ps `canMeasure` event = probabilityMeasure ps $ event
     | otherwise = error "Invalid event for the given prob. space"
 
 -- Given 1st event, what's probability of second event
 conditionalProbability :: (Eq a) =>
-    ProbabilitySpace a -> (Event a) -> (Event a) -> Double
+    ProbabilitySpace a -> Event a -> Event a -> Likelihood
 conditionalProbability ps given event
     = (p $ given `intersect` event) / (p event) where p = probability ps
 
-independent :: (Eq a) => ProbabilitySpace a -> (Event a) -> (Event a) -> Bool
+independent :: (Eq a) => ProbabilitySpace a -> Event a -> Event a -> Bool
 independent ps ea eb = (p ea) * (p eb) == (p $ ea `intersect` eb)
     where p = probability ps
 
 conditionalIndependent :: (Eq a) =>
-    ProbabilitySpace a -> (Event a) -> (Event a) -> (Event a) -> Bool
+    ProbabilitySpace a -> Event a -> Event a -> Event a -> Bool
 conditionalIndependent ps given ea eb
     = (cp ea) * (cp eb) == (cp $ ea `intersect` eb)
     where cp = conditionalProbability ps given
