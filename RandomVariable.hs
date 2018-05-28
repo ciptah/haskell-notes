@@ -111,6 +111,7 @@ isDiscrete dist = isJust $ pmf dist
 integral :: (RealNum -> RealNum) -> Set RealNum -> RealNum
 integral density domain = error "magic!"
 
+-- Density function of the distribution.
 normpdf :: RealNum -> RealNum -> RealNum -> RealNum
 normpdf mean var x =
   1.0 / (sqrt $ 2 * pi * var) * (exp $ - (x - mean) ** 2 / 2 / var)
