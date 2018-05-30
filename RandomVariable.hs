@@ -9,6 +9,7 @@ module RandomVariable (
   Distribution(KnownRV),
   makeDist,
   isRandomVariable,
+  getRVFunction,
   makeRV,
   toRV,
   pmf,
@@ -42,6 +43,9 @@ isRandomVariable :: (Eq a) => ProbabilitySpace a -> (a -> Observation) -> Bool
 isRandomVariable pspace rv = domain (Box rv reals) == outcomes pspace &&
   (forAllSets borelR $ \event -> preimage rv event ∈ measurableEvents)
   where measurableEvents = measurable $ events pspace
+
+getRVFunction :: RandomVariable w -> (w -> Observation)
+getRVFunction (RandomVariable ps fn) = fn
 
 -- Distribution function is just a function from Sets of reals to the
 -- probability of that set happening under the random variable.

@@ -26,3 +26,9 @@ import RandomVariable
 
 data StochasticProcess t w = Process (t -> Distribution w)
 
+sample :: StochasticProcess t w -> t -> Distribution w
+sample (Process index) t = index t
+
+realize :: StochasticProcess t w -> w -> (t -> Observation)
+realize (Process fn) w = \t -> (getRVFunction $ toRV $ fn t) w
+

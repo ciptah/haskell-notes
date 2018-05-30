@@ -24,10 +24,9 @@
 
 EVENTS="CREATE,CLOSE_WRITE,DELETE,MODIFY,MOVED_FROM,MOVED_TO"
 
-if [ -z "$1" ]; then
-  echo "Usage: $0 cmd ..."
-  exit -1;
-fi
+rm .out/*
+CMD="ghc -dynamic -odir=.out -hidir=.out *.hs"
+echo $CMD && $CMD
 
 inotifywait -e "$EVENTS" -m -r --format '%:e %f' . | (
 WAITING="";
@@ -45,7 +44,6 @@ while true; do
 done) | (
 while true; do
   read TMP;
-  echo $@
-  $@
+  echo $CMD && $CMD
 done
 )
