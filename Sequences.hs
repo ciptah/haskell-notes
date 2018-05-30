@@ -3,15 +3,18 @@
 
 module Sequences (
   Sequence,
+  Convergence(..),
   nonNegativeReals,
   positiveReals,
   possibleConvergences,
   converges,
   convergence,
+  convergesFinite,
   order,
   toList,
   isSubsequenceOf,
-  convergentSubseq
+  convergentSubseq,
+  realSequences
 ) where
 
 import Sets
@@ -45,6 +48,12 @@ converges seq limit =
 -- Analyze the convergence of this sequence
 convergence :: Sequence RealNum -> Maybe (Convergence RealNum)
 convergence seq = singleton $ possibleConvergences % \x -> converges seq x
+
+convergesFinite :: Sequence RealNum -> Bool
+convergesFinite seq = isFinite $ convergence seq
+  where isFinite Nothing = False
+        isFinite (Just (Finite _)) = True
+        isFinite _ = False
 
 -- A convergent sequence is always bounded. If convergent, then bounded.
 -- NOTE: not the converse: Bounded does not imply convergent.
@@ -130,3 +139,5 @@ bolzanoWeierstrassClaim = forAll boundedSequences $ \bseq ->
   convergentSubseq bseq /= empty
   where boundedSequences = Everything % \seq -> isBounded seq
         isBounded seq = bounded $ image $ Box seq Everything
+
+realSequences = Everything :: Set (Sequence RealNum)
