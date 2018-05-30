@@ -2,8 +2,15 @@
 Math notes using Haskell.
 
 # Why
-Math, especially probability, is confusing to me because many terms are overloaded (for example, probability of events vs probability of random variables). By defining concepts as functions in Haskell it helps bring some order.
+It helps make definitions more concrete. It also helps disambiguate many terms
+or symbols that are overloaded (i.e. expectation, lim, etc.)
 
-Another advantage of using Haskell is its ability to specify infinite sets of things, which is useful when writing down the definition of "countable union".
+The scope of these notes are definitions/theorems/claims of real analysis and
+probability theory up to Stochastic Calculus.
 
-The code's never meant to be run, just compiled. Passing compilation is a good sign that things make sense.
+# Next
+1. Limits and Continuity
+1. Derivative/Differential
+1. Integral
+1. Martingale
+1. Brownian Motion
