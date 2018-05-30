@@ -32,7 +32,7 @@ halts fn input = error "Turing is mad at you!"
 
 -- We have to remember the codomain of a function because having only
 -- Everything as codomain is too restrictive.
--- For example, "Everything" might be Integers but I want 
+-- For example, "Everything" might be Integers but I want
 -- the codomain to be even numbers.
 --
 -- See: https://en.wikipedia.org/wiki/Codomain

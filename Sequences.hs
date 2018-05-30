@@ -9,7 +9,9 @@ module Sequences (
   converges,
   convergence,
   order,
-  toList
+  toList,
+  isSubsequenceOf,
+  convergentSubseq
 ) where
 
 import Sets
@@ -25,6 +27,7 @@ positiveReals = reals % (\x -> x > 0)
 
 possibleConvergences = Everything :: Set (Convergence RealNum)
 
+-- "Converges to X"
 -- Definition of convergence (3.10)
 -- Definition of convergence to infinity (3.12)
 converges :: Sequence RealNum -> Convergence RealNum -> Bool
@@ -70,6 +73,10 @@ monotone = \seq -> increasing seq || decreasing seq
 strictlyMonotone :: (Ord a) => Sequence a -> Bool
 strictlyMonotone = \seq -> strictlyIncreasing seq || strictlyDecreasing seq
 
+-------------- Application: Turning Sets into Lists -----------
+--For certain sets (countable sets with totally ordered elements)
+--we can define how to turn a set into a Haskell (possibly) infinite list.
+
 -- THIS IS WRONG, because some sequences can only be monotonically decreasing.
 badS :: (Ord a, Ord b) => Set a -> Set b -> Set (Boxed a b)
 badS a b = mappers a b % \bf -> let f = compile bf in
@@ -96,3 +103,30 @@ toList set | set == empty = Just [] -- Base case for finite case
   where minimum = fromJust $ infimum set
         remainder = set `minus` singletonOf minimum
 
+---------------- Lim Sup and Lim Inf - for every BOUNDED sequence, they exist
+
+----------- Cauchy sequences ------------------
+
+--------- Bolzano-Weierstrass Theorem ------------
+
+-- There is a mapping from subsequence index to supersequence index
+isSubsequenceOf :: (Eq a) => Sequence a -> Sequence a -> Bool
+a `isSubsequenceOf` b = thereExists selection $ \box ->
+  let mapping = compile box in forAll naturals $ \n -> a n == b (mapping n)
+  where selection = (Everything :: Set (Boxed Integer Integer)) % \box ->
+                    domain box == naturals && range box `isSubsetOf` naturals &&
+                    strictlyIncreasing (compile box)
+
+-- The theorem does not claim any result about unbounded sequences (it could
+-- be that they are oscillating) so the result for unbounded is undefined.
+-- B-W theorem guarantees the output of this function is never empty
+-- for bounded sequences
+convergentSubseq :: Sequence RealNum -> Set (Sequence RealNum)
+convergentSubseq seq =
+  Everything % \subseq ->
+    subseq `isSubsequenceOf` seq && (isJust $ convergence subseq)
+
+bolzanoWeierstrassClaim = forAll boundedSequences $ \bseq ->
+  convergentSubseq bseq /= empty
+  where boundedSequences = Everything % \seq -> isBounded seq
+        isBounded seq = bounded $ image $ Box seq Everything
