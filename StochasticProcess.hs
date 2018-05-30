@@ -24,5 +24,5 @@ import RandomVariable
 --   Set w -> SigmaAlgebra w -> ProbabilityMeasure w -> RandomVariable w
 --     -> Distribution w -> StochasticProcess w
 
-data StochasticProcess w = (Ord time) => Process (time -> Distribution w)
+data StochasticProcess t w = Process (t -> Distribution w)
 
