@@ -8,7 +8,7 @@ module Sequences (
   possibleConvergences,
   converges,
   convergence,
-  sequencers,
+  order,
   toList
 ) where
 
@@ -53,12 +53,34 @@ prop319 :: Sequence RealNum -> Bool
 prop319 seq = if isJust (convergence seq)
   then (bounded $ image $ Box seq Everything) else True
 
--- Sequencers are stronger than mappers where the mapping is guaranteed to
--- preserve order, i.e. the function is strictly monotonically increasing.
-sequencers :: (Ord a, Ord b) => Set a -> Set b -> Set (Boxed a b)
-sequencers a b = mappers a b % \bf -> let f = compile bf in
+-- Whether this sequence has a pattern (increasing/decreasing/etc.)
+pattern :: (Ord a) => (a -> a -> Bool) -> Sequence a -> Bool
+pattern op seq = forAll naturals $ \n -> seq (n + 1) `op` seq n
+
+strictlyIncreasing :: (Ord a) => Sequence a -> Bool
+strictlyIncreasing = pattern (>)
+increasing :: (Ord a) => Sequence a -> Bool
+increasing = pattern (>=)
+decreasing :: (Ord a) => Sequence a -> Bool
+decreasing = pattern (<=)
+strictlyDecreasing :: (Ord a) => Sequence a -> Bool
+strictlyDecreasing = pattern (<)
+monotone :: (Ord a) => Sequence a -> Bool
+monotone = \seq -> increasing seq || decreasing seq
+strictlyMonotone :: (Ord a) => Sequence a -> Bool
+strictlyMonotone = \seq -> strictlyIncreasing seq || strictlyDecreasing seq
+
+-- THIS IS WRONG, because some sequences can only be monotonically decreasing.
+badS :: (Ord a, Ord b) => Set a -> Set b -> Set (Boxed a b)
+badS a b = mappers a b % \bf -> let f = compile bf in
   forAll (a ⨯ a) $ \(x1, x2) ->
     (x1 < x2 && f x1 < f x2) || (x1 >= x2 && f x1 >= f x2)
+
+-- The correct way of turning a countable set to a list is finding a sequence
+-- that is strictly monotone.
+order :: (Ord b) => Set b -> Maybe (Sequence b)
+order b = pure compile <*> singleton sequences
+  where sequences = mappers naturals b % \box -> strictlyMonotone (compile box)
 
 -- Finally, we can turn into a list those sets that have a unique sequencer.
 -- With maps it's impossible to get a unique mapper, imagine swapping every
@@ -69,11 +91,8 @@ toList :: (Ord a) => Set a -> Maybe [a]
 toList set | set == empty = Just [] -- Base case for finite case
            | isFinite set = Just $ minimum : (fromJust $ toList remainder)
            -- Apply the unique sequencer (if available) to [1..]
-           | countable set = pure map <*> maybeSequencer <*> pure [1..]
+           | countable set = pure map <*> (order set) <*> pure [1..]
            | otherwise = Nothing
   where minimum = fromJust $ infimum set
         remainder = set `minus` singletonOf minimum
-        -- mseq :: Maybe (Integer -> a)
-        -- pure map <*> mseq => Maybe ([Integer] -> [a])
-        maybeSequencer = fmap compile $ singleton $ sequencers naturals set
 

@@ -144,6 +144,8 @@ archimedaean = forAll r1 $ \x -> thereExists naturals $ \n -> x < fromIntegral n
 
 -- Find all (bijective mappings from one set to another)
 -- We can't "smap compile" here because functions aren't Eq-able
+-- By definition the existence of this bijective mapping means the sets
+-- must have same cardinality.
 mappers :: (Eq a, Eq b) => Set a -> Set b -> Set (Boxed a b)
 mappers x y = (Everything :: Set (Boxed a b)) %
   \boxed -> domain boxed == x && range boxed == y && bijective boxed
