@@ -23,9 +23,11 @@
 #
 
 EVENTS="CREATE,CLOSE_WRITE,DELETE,MODIFY,MOVED_FROM,MOVED_TO"
+WATCH="${1:-*.hs}"
+echo "Watching $WATCH"
 
 rm .out/*
-CMD="ghc -dynamic -odir=.out -hidir=.out *.hs"
+CMD="ghc -dynamic -odir=.out -hidir=.out $WATCH"
 echo $CMD && $CMD
 
 inotifywait -e "$EVENTS" -m -r --format '%:e %f' . | (
