@@ -14,7 +14,9 @@ module Sequences (
   toList,
   isSubsequenceOf,
   convergentSubseq,
-  realSequences
+  realSequences,
+  bcompose,
+  foldC
 ) where
 
 import Sets
@@ -141,3 +143,14 @@ bolzanoWeierstrassClaim = forAll boundedSequences $ \bseq ->
         isBounded seq = bounded $ image $ Box seq Everything
 
 realSequences = Everything :: Set (Sequence RealNum)
+
+---------- Folding a countable Set -------------------
+
+bcompose :: Eq c => (b -> c) -> (Boxed a b) -> (Boxed a c)
+bcompose fn (Box fn0 set) = Box (\a -> fn $ fn0 $ a) (smap fn set)
+
+-- The result is the set possible fold result series (partial folds).
+foldC :: (Eq a, Eq b) => (a -> b -> b) -> b -> Set a -> Set (Boxed Integer b)
+foldC fn zero set | countable set = smap boxSeqOf $ mappers naturals set
+  where seqOf bm = \n -> foldr fn zero $ map (compile bm) [0..(n-1)]
+        boxSeqOf bm = Box (seqOf bm) Everything

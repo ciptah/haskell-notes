@@ -8,7 +8,7 @@ module Vector (
   Vector,
   (@@),
   cons,
-  toList,
+  vecToList,
   reals2, reals3, reals4
 ) where
 
@@ -29,16 +29,16 @@ data Vector (n :: Nat) a = Vec (Proxy n) [a]
 cons :: a -> Vector n a -> Vector (n + 1) a
 cons v (Vec _ x) = Vec Proxy (v:x)
 
-toList :: (KnownNat n, Num a) => Vector n a -> [a]
-toList v@(Vec p x) = map (v @@) [0..((fromInteger $ natVal p) - 1)]
+vecToList :: (KnownNat n, Num a) => Vector n a -> [a]
+vecToList v@(Vec p x) = map (v @@) [0..((fromInteger $ natVal p) - 1)]
 
 instance (KnownNat n, Eq a, Num a) => Eq (Vector n a) where
   vx@(Vec p x) == vy
     | natVal p == 0 = True
-    | otherwise = toList vx == toList vy
+    | otherwise = vecToList vx == vecToList vy
 
 instance (KnownNat n, Eq a, Num a, Show a) => Show (Vector n a) where
-  show v = show $ toList v
+  show v = show $ vecToList v
 
 reals2 = Everything :: Set (Vector 2 RealNum)
 reals3 = Everything :: Set (Vector 3 RealNum)

@@ -1,9 +1,11 @@
 module Series (
   series,
-  riemannZeta
+  riemannZeta,
+  foldSum
 ) where
 
 import Sets
+import Analysis
 import Sequences
 
 import Data.Maybe (isJust)
@@ -27,3 +29,12 @@ riemannZeta s = get limit
   where seq n = 1 / ((fromIntegral n) ** s)
         limit = convergence $ series seq
         get (Just (Finite x)) = x
+
+-- A special class of foldC that gives the set of results from applying
+-- summation to a countable set.
+-- Different orderings might yield different results.
+-- TODO make this work with finite sets.
+foldSum :: Set RealNum -> Set (Maybe (Convergence RealNum))
+foldSum values
+  | isFinite values = error "TODO implement!"
+  | countable values = smap (convergence . compile) $ foldC (+) 0 values
