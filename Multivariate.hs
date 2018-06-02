@@ -44,3 +44,7 @@ join :: Joint w m -> Joint w r -> Joint w (m + r)
 join = error "TODO!"
 --join d1 d2 | ps1 != ps2 = error "Incompatible!"
 --           | otherwise = error "TODO!" -- UnknownRV makeJoint rv1 rv2
+
+-- Two RVs in the same prob. space are independent
+independent :: Joint w m -> Joint w r -> Bool
+independent = error "TODO!"
