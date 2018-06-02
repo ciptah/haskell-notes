@@ -24,9 +24,9 @@ import RandomVariable
 --   Set w -> SigmaAlgebra w -> ProbabilityMeasure w -> RandomVariable w
 --     -> Distribution w -> StochasticProcess w
 
-data StochasticProcess t w = Process (t -> Distribution w)
+data StochasticProcess t w = Process (t -> Distribution w Observation)
 
-sample :: StochasticProcess t w -> t -> Distribution w
+sample :: StochasticProcess t w -> t -> Distribution w Observation
 sample (Process index) t = index t
 
 realize :: StochasticProcess t w -> w -> (t -> Observation)

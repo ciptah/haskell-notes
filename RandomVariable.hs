@@ -6,6 +6,7 @@
 module RandomVariable (
   RandomVariable,
   Distribution(KnownRV),
+  Observation,
   makeDist,
   isRandomVariable,
   getRVFunction,
@@ -33,8 +34,15 @@ import Data.Maybe (fromJust, isJust)
 -- Given a probability space (Ω, F, P), a random variable X is a function...
 data RandomVariable a obs = RandomVariable (ProbabilitySpace a) (a -> obs)
 
+type Observation = RealNum
+
 borelRd :: SigmaAlgebra obs
 borelRd = error "TODO implement"
+
+-- Given the RV, look up the set of outcomes that will be included in the
+-- given observations.
+lookup :: RandomVariable w obs -> Set obs -> Set w
+lookup (RandomVariable space fn) selection = preimage fn selection
 
 -- Random variable is a function where if we take any borel subset of the
 -- real line, gathered all the outcomes that map into that subset according trealso
