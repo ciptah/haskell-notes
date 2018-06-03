@@ -6,7 +6,9 @@
 
 module Vector (
   Vector,
-  (@@),
+  Selection,
+  (@@), (!>),
+  sel, project,
   cons,
   vecToList,
   reals2, reals3, reals4
@@ -19,6 +21,9 @@ import Sets
 -- To make the vector "well defined" for any n and [a],
 -- equality is determined by comparing lists up to n (and padding with 0)
 data Vector (n :: Nat) a = Vec (Proxy n) [a]
+
+-- Select m unique things from 0..n-1
+data Selection (m :: Nat) (n :: Nat) = Select (Vector m Integer)
 
 -- Zero-based dimension.
 (@@) :: (KnownNat n, Num a) => Vector n a -> Int -> a
@@ -39,6 +44,17 @@ instance (KnownNat n, Eq a, Num a) => Eq (Vector n a) where
 
 instance (KnownNat n, Eq a, Num a, Show a) => Show (Vector n a) where
   show v = show $ vecToList v
+
+(!>) :: Vector n a -> Selection m n -> Vector m a
+(!>) = error "TODO"
+
+sel :: [Int] -> Selection m n
+sel = error "TODO"
+
+project :: (Eq a, Num a) =>
+  Set (Vector n a) -> Selection m n -> Set (Vector m a)
+--project vs selection = smap (\v -> v !> selection) vs
+project = error " Blah!" -- Needs KnownNat
 
 reals2 = Everything :: Set (Vector 2 RealNum)
 reals3 = Everything :: Set (Vector 3 RealNum)

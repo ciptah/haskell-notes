@@ -19,6 +19,7 @@ module Probability (
 ) where
 
 import Sets
+import Analysis
 import SigmaAlgebra
 import Data.Maybe (isNothing)
 
@@ -34,6 +35,12 @@ data ProbabilitySpace a = ProbabilitySpace {
   events :: SigmaAlgebra a,
   probabilityMeasure :: Event a -> Likelihood
 }
+
+instance Eq (ProbabilitySpace a) where
+  ps1 == ps2 =
+    outcomes ps1 == outcomes ps2 &&
+    events ps1 == events ps2 &&
+    Box (probabilityMeasure ps1) Everything == Box (probabilityMeasure ps2) Everything
 
 probabilitySpace
     :: (Eq a) => Set a

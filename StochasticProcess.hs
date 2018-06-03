@@ -3,6 +3,8 @@ module StochasticProcess (
 ) where
 
 import RandomVariable
+import Multivariate
+import Vector
 
 -- What is actually the "w" in a stochastic process?
 -- Usually we just get the pmf/pdf indexed at time t.
@@ -24,11 +26,11 @@ import RandomVariable
 --   Set w -> SigmaAlgebra w -> ProbabilityMeasure w -> RandomVariable w
 --     -> Distribution w -> StochasticProcess w
 
-data StochasticProcess t w = Process (t -> Distribution w Observation)
+data StochasticProcess t w = Process (t -> Univariate w)
 
-sample :: StochasticProcess t w -> t -> Distribution w Observation
+sample :: StochasticProcess t w -> t -> Univariate w
 sample (Process index) t = index t
 
 realize :: StochasticProcess t w -> w -> (t -> Observation)
-realize (Process fn) w = \t -> (getRVFunction $ toRV $ fn t) w
+realize (Process fn) w = \t -> (getRVFunction $ toRV $ fn t) w @@ 0
 

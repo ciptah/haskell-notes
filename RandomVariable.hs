@@ -5,10 +5,12 @@
 
 module RandomVariable (
   RandomVariable,
-  Distribution(KnownRV),
+  Distribution(KnownRV, UnknownRV),
   Observation,
+  RandomVariable.lookup,
   makeDist,
   isRandomVariable,
+  getRVSpace,
   getRVFunction,
   makeRV,
   toRV,
@@ -32,7 +34,10 @@ import Data.Maybe (fromJust, isJust)
 
 -- a here is the original sample space that we'll map to Real numbers.
 -- Given a probability space (Ω, F, P), a random variable X is a function...
-data RandomVariable a obs = RandomVariable (ProbabilitySpace a) (a -> obs)
+data RandomVariable a obs = RandomVariable {
+  getRVSpace :: (ProbabilitySpace a),
+  getRVFunction :: (a -> obs)
+}
 
 type Observation = RealNum
 
@@ -52,9 +57,6 @@ isRandomVariable :: (Eq a, Eq obs) => ProbabilitySpace a -> (a -> obs) -> Bool
 isRandomVariable pspace rv = domain (Box rv Everything) == outcomes pspace &&
   (forAllSets borelRd $ \event -> preimage rv event ∈ measurableEvents)
   where measurableEvents = measurable $ events pspace
-
-getRVFunction :: RandomVariable w obs -> (w -> obs)
-getRVFunction (RandomVariable ps fn) = fn
 
 -- Distribution function is just a function from Sets of reals to the
 -- probability of that set happening under the random variable.
