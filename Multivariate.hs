@@ -10,7 +10,8 @@ module Multivariate (
   condition,
   marginalize,
   connect,
-  join
+  join,
+  independent
 ) where
 
 import GHC.TypeLits

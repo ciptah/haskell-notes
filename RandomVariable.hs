@@ -17,7 +17,8 @@ module RandomVariable (
   (<.),
   toRV,
   pmf,
-  isDiscrete
+  isDiscrete,
+  normal
 ) where
 
 import Sets
@@ -69,6 +70,12 @@ isRandomVariable pspace rv = domain (Box rv Everything) == outcomes pspace &&
 data Distribution w obs =
   KnownRV (RandomVariable w obs)
   | UnknownRV (Set obs -> Likelihood)
+
+instance (Eq obs) => Eq (Distribution w obs) where
+  -- Distribution equality is different from random variable equality,
+  -- in that they don't need to map individual w's to the same values.
+  -- Aka "equality in distribution" not "probability 1"
+  d1 == d2 = Box (rate d1) Everything == Box (rate d2) Everything
 
 -- Construct a distribution from a function.
 makeDist :: Eq obs => (Set obs -> Likelihood) -> Maybe (Distribution w obs)
