@@ -8,11 +8,13 @@ module RandomVariable (
   Distribution(KnownRV, UnknownRV),
   Observation,
   RandomVariable.lookup,
+  borelRd,
   makeDist,
   isRandomVariable,
   getRVSpace,
   getRVFunction,
   makeRV,
+  (<.),
   toRV,
   pmf,
   isDiscrete
@@ -38,6 +40,10 @@ data RandomVariable a obs = RandomVariable {
   getRVSpace :: (ProbabilitySpace a),
   getRVFunction :: (a -> obs)
 }
+
+instance (Eq obs) => Eq (RandomVariable a obs) where
+  rv1 == rv2 = (getRVSpace rv1) == (getRVSpace rv2) &&
+    (Box (getRVFunction rv1) Everything) == (Box (getRVFunction rv2) Everything)
 
 type Observation = RealNum
 
@@ -80,6 +86,14 @@ makeRV :: (Eq a, Eq obs) =>
 makeRV ps rv
     | isRandomVariable ps rv = Just $ RandomVariable ps rv
     | otherwise = Nothing
+
+
+-- Compositions of random variables with another function.
+-- Always guaranteed to generate a random variable.
+(<.) :: (Eq w, Eq obs2) =>
+  (obs1 -> obs2) -> RandomVariable w obs1 -> RandomVariable w obs2
+fn <. rv = fromJust $ makeRV (getRVSpace rv) (fn . getRVFunction rv)
+infixr 9 <.
 
 -- Invoke the probability distribution by evaluating the likelihood of an event
 rate :: Distribution w obs -> Set obs -> Likelihood

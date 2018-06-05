@@ -11,6 +11,7 @@ module Vector (
   sel, project,
   cons,
   vecToList,
+  vmap,
   reals2, reals3, reals4
 ) where
 
@@ -51,10 +52,15 @@ instance (KnownNat n, Eq a, Num a, Show a) => Show (Vector n a) where
 sel :: [Int] -> Selection m n
 sel = error "TODO"
 
+-- pick several components of the vector.
 project :: (Eq a, Num a) =>
   Set (Vector n a) -> Selection m n -> Set (Vector m a)
 --project vs selection = smap (\v -> v !> selection) vs
 project = error " Blah!" -- Needs KnownNat
+
+-- Apply a function to every component.
+vmap :: (Eq a, Num a, KnownNat n) => (a -> b) -> Vector n a -> Vector n b
+vmap fn v = Vec Proxy $ map fn $ vecToList v
 
 reals2 = Everything :: Set (Vector 2 RealNum)
 reals3 = Everything :: Set (Vector 3 RealNum)

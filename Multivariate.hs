@@ -6,6 +6,7 @@ module Multivariate (
   Conditional,
   Joint,
   Univariate,
+  RVD,
   condition,
   marginalize,
   connect,
@@ -23,6 +24,9 @@ import Probability (probability)
 type Joint w n = Distribution w (Vector n Observation)
 
 type Univariate w = Joint w 1
+
+-- Random variable in D dimensions
+type RVD w n = RandomVariable w (Vector n Observation)
 
 -- Conditional distribution from m to r variables.
 type Conditional w (m :: Nat) (r :: Nat) =
