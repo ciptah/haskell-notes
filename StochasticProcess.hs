@@ -49,14 +49,14 @@ realize (Process fn) w = \t -> (getRVFunction $ toRV $ fn t) w @@ 0
 
 ---------- Martingale property of Continuous-time 1D SPs ----------------
 
-rvMeasurable :: SigmaAlgebra w -> RVD w n -> Bool
-rvMeasurable sa rv = forAllSets borelRd $ \event ->
+canMeasureRV :: SigmaAlgebra w -> RVD w n -> Bool
+canMeasureRV sa rv = forAllSets borelRd $ \event ->
   sa `canMeasure` (RandomVariable.lookup rv event)
 
 martingale :: (Eq w) => Filtration RealNum w -> SP RealNum w -> Bool
 martingale f sp = let time = (Everything :: Set RealNum) % \t -> t > 0 in
   -- X_t is F_t measurable
-  (forAll time $ \t -> rvMeasurable (f t) (rv t)) &&
+  (forAll time $ \t -> (f t) `canMeasureRV` (rv t)) &&
   -- E|X_t| is finite
   (forAll time $ \t -> finite $ limExp (absolute $ rv t)) &&
   -- Conditional expectation becomes random variable
