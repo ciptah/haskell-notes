@@ -1,3 +1,6 @@
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
+
 -- Set theory in Haskell.
 -- There are two "primitive" operations:
 --   1. Checking existence of an element in the set satisfying a predicate
@@ -5,11 +8,13 @@
 -- The rest can be defined using these two without any circular definitions.
 
 module Sets (
-  Set(Everything, Subset),
+  Set(Everything, Subset), -- Everything is Deprecated
+  Valid(isValid),
   Statement,
   (%),
   Collection,
   RealNum,
+  everything,
   member, notMember, (∈), (∉), -- u2208, u2209
   thereExists', forAll', eval, prove, thereExists, forAll,
   intersect, union, minus, complement, (∪), (∩), -- u222a, u2229
@@ -21,7 +26,7 @@ module Sets (
   star,
   countableUnions,
   smap,
-  reals, r1, integers, r2, nonnegatives, naturals, empty
+  reals, r1, integers, nonnegatives, naturals, empty
 ) where
 
 import Data.Maybe (Maybe)
@@ -49,7 +54,24 @@ set % predicate = Subset predicate set
 type Collection = Set
 type RealNum = Double
 
+-- Classes that require validation on top of the constructor.
+-- Essentially anything you put inside a Set requires this instance.
+class Valid a where
+  isValid :: a -> Bool
+  isValid _ = True
 
+instance Valid RealNum where isValid _ = True
+instance Valid Integer where isValid _ = True
+instance Valid Rational where isValid _ = True
+
+instance (Valid w) => Valid (Set w) where
+  isValid set = forAll set $ \w -> isValid w
+
+-- For many sets like real numbers, "Everything" is well-defined. But
+-- some objects require constructors that do validation on their data.
+-- The semantics of "Everything" need to be updated to include this.
+everything :: (Valid a) => Set a
+everything = Everything % isValid
 
 -- The way we construct sets means membership can be computed exactly.
 member :: a -> Set a -> Bool
@@ -91,15 +113,16 @@ forAll inSet predicate = eval $ forAll' inSet predicate
 
 -- Set operations
 intersect a b = a % \x -> x ∈ b
-union a b = Everything % \x -> x ∈ a && x ∈ b
+union a b = everything % \x -> x ∈ a && x ∈ b
 minus a b = a % \x -> x ∉ b
-complement a = Everything `minus` a
+complement a = everything `minus` a
 infixl 6 ∪ -- u222A
 infixl 7 ∩ -- u2229
+(∪) :: (Valid a) => Set a -> Set a -> Set a
 (∪) = union
 (∩) = intersect
 
-unionAll :: (Foldable t) => t (Set a) -> Set a
+unionAll :: (Valid a, Foldable t) => t (Set a) -> Set a
 unionAll = foldr (∪) empty -- Currying
 intersectAll :: (Foldable t) => t (Set a) -> Set a
 intersectAll = foldr (∩) Everything
@@ -156,7 +179,7 @@ star set = Everything % \xs -> and $ map (flip member set) xs
 
 -- Given a set of sets X, return the set of sets made by countable unions
 -- of elements of X.
-countableUnions :: Set (Set a) -> Set (Set a)
+countableUnions :: (Valid a) => Set (Set a) -> Set (Set a)
 countableUnions x =
     Everything % \y -> thereExists (star x) $ \seq -> unionAll seq == y
 
@@ -169,10 +192,9 @@ smap :: (Eq b) => (a -> b) -> Set a -> Set b
 smap fn set = Everything % \y -> thereExists set $ \x -> fn x == y
 
 -- Some examples.
-reals = Everything :: Set RealNum
+reals = everything :: Set RealNum
 r1 = reals
-integers = Everything :: Set Integer
-r2 = Everything :: Set (RealNum, RealNum)
+integers = everything :: Set Integer
 nonnegatives = integers % \i -> i >= 0 -- non-negative integers.
 naturals = integers % \i -> i > 0 -- natural numbers
 empty = Everything `minus` Everything

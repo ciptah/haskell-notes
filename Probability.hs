@@ -43,18 +43,18 @@ instance Eq (ProbabilitySpace a) where
     Box (probabilityMeasure ps1) Everything == Box (probabilityMeasure ps2) Everything
 
 probabilitySpace
-    :: (Eq a) => Set a
+    :: (Valid a, Eq a) => Set a
     -> SigmaAlgebra a
     -> Measure a
     -> Maybe (ProbabilitySpace a)
 probabilitySpace o f p
-    | not $ isValid o f = Nothing
+    | isNothing $ sigmaAlgebra o $ measurable f = Nothing
     | not $ isProbabilityMeasure p f = Nothing
     | otherwise  = Just $ ProbabilitySpace o f p
 
 -- A probability measure is a function defined over the sets in a σ-algebra F
 -- such that... (Definition 2.4 of probability_basics.pdf)
-isProbabilityMeasure :: (Eq a) => Measure a -> SigmaAlgebra a -> Bool
+isProbabilityMeasure :: (Valid a, Eq a) => Measure a -> SigmaAlgebra a -> Bool
 isProbabilityMeasure p f =
   (forAllSets f $ \s -> p(s) >= 0)
   -- Countable additivity.

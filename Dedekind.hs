@@ -20,11 +20,11 @@ rationals = Everything :: Set Rational
 
 type Cut w = (Set w, Set w)
 
-isPartition :: [Set a] -> Set a -> Bool
+isPartition :: (Valid a) => [Set a] -> Set a -> Bool
 list `isPartition` set = and [ a /= empty | a <- list ] &&
   unionAll list == set && isPairwiseDisjoint list
 
-isCut :: (Ord w) => (Set w, Set w) -> Set w -> Bool
+isCut :: (Valid w, Ord w) => (Set w, Set w) -> Set w -> Bool
 isCut (a, b) set = 
   [a, b] `isPartition` set &&
   (forAll a $ \xa -> xa ∈ lowerBounds b) && -- partition implies xa /= any in b
@@ -32,7 +32,7 @@ isCut (a, b) set =
 
 -- While it's possible to define this in terms of partitions, it's
 -- clearer to just directly define what a (Dedekind) cut is.
-cuts :: (Ord w) => Set w -> Set (Cut w)
+cuts :: (Valid w, Ord w) => Set w -> Set (Cut w)
 cuts set = Everything % \c -> isCut c set
 
 dedekindCuts = cuts rationals

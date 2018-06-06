@@ -24,6 +24,8 @@ import Sets
 -- equality is determined by comparing lists up to n (and padding with 0)
 data Vector (n :: Nat) a = Vec (Proxy n) [a]
 
+instance Valid (Vector n a) where isValid _ = True
+
 type RealD n = Vector n RealNum
 
 -- Select m unique things from 0..n-1
@@ -48,6 +50,9 @@ instance (KnownNat n, Eq a, Num a) => Eq (Vector n a) where
 
 instance (KnownNat n, Eq a, Num a, Show a) => Show (Vector n a) where
   show v = show $ vecToList v
+
+instance (Eq a, Num a, Ord a) => Ord (Vector 1 a) where
+  v1 <= v2 = v1 @@ 0 <= v2 @@ 0
 
 (!>) :: Vector n a -> Selection m n -> Vector m a
 (!>) = error "TODO"
