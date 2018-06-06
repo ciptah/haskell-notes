@@ -1,9 +1,7 @@
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
@@ -33,9 +31,11 @@ data Set (s :: Symbol) w =
   Everything |
   forall src. (Defined (Set src) w) => Subset (w -> Bool) (Set src w)
 
+-- To put a data type in a Set, need to define what "All" means.
 everything_ :: Set "All" w
 everything_ = Everything -- DO NOT CREATE Everything ANYWHERE ELSE
 
+-- Get the set encoded as type as a set.
 everything :: (Defined (Set "All") w) => Set "%" w
 everything = everything_ % (contains everything_)
 
@@ -101,6 +101,8 @@ minus :: (Defined (Set s) w, Defined (Set r) w)
   => Set s w -> Set r w -> Set "%" w
 minus a b = a % \x -> x ∉ b
 
+-- Use of everything (without underscore) means it is using the correct
+-- universal set
 complement a = everything `minus` a
 
 -- Everything except elements that are not in both sets.
@@ -179,9 +181,13 @@ instance Defined (Set "> 0") Integer where
 instance Defined (Set "< 0") Integer where
   contains set x = x < 0
 
+instance Defined (Set "OpenInterval") (RealNum, RealNum) where
+  contains set (x, y) = x < y
+
 -- Sets of real numbers and their definitions.
 type Reals = AllOf RealNum
 type PositiveReals = Set "> 0" RealNum
 type NegativeReals = Set "< 0" RealNum
 type Integers = AllOf Integer
 type Naturals = Set "> 0" Integer
+type OpenIntervals = Set "OpenInterval" (RealNum, RealNum)
