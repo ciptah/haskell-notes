@@ -3,6 +3,8 @@
 module Analysis (
   Boxed(Box),
   Bound,
+  box,
+  boxSet,
   halts,
   naked,
   codomain,
@@ -48,6 +50,12 @@ data Boxed a b = Box {
   naked :: a -> b,
   codomain :: Set b
 }
+
+-- Convenience function that can be used in fmaps.
+box :: (a -> b) -> Boxed a b
+box fn = Box fn Everything
+
+boxSet set = smap box set
 
 -- "Weld" a box into the function, making it part of the definition.
 -- This means the function will blow up if it will return something outside the

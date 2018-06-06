@@ -3,6 +3,7 @@
 
 module Sequences (
   Sequence,
+  BSeq,
   Convergence(..),
   nonNegativeReals,
   positiveReals,
@@ -25,6 +26,8 @@ import Data.Maybe (Maybe, isJust, fromJust)
 
 type Sequence a = Integer -> a
 
+type BSeq a = Boxed Integer RealNum
+
 data Convergence a = NegativeInfinity | PositiveInfinity | Finite a deriving (Eq)
 
 nonNegativeReals = reals % (\x -> x >= 0)
@@ -32,7 +35,7 @@ positiveReals = reals % (\x -> x > 0)
 
 possibleConvergences = Everything :: Set (Convergence RealNum)
 
--- "Converges to X"
+-- "Converges to X" (maybe not unique)
 -- Definition of convergence (3.10)
 -- Definition of convergence to infinity (3.12)
 converges :: Sequence RealNum -> Convergence RealNum -> Bool

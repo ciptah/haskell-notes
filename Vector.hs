@@ -6,6 +6,7 @@
 
 module Vector (
   Vector,
+  RealD,
   Selection,
   (@@), (!>),
   sel, project,
@@ -22,6 +23,8 @@ import Sets
 -- To make the vector "well defined" for any n and [a],
 -- equality is determined by comparing lists up to n (and padding with 0)
 data Vector (n :: Nat) a = Vec (Proxy n) [a]
+
+type RealD n = Vector n RealNum
 
 -- Select m unique things from 0..n-1
 data Selection (m :: Nat) (n :: Nat) = Select (Vector m Integer)
@@ -62,6 +65,6 @@ project = error " Blah!" -- Needs KnownNat
 vmap :: (Eq a, Num a, KnownNat n) => (a -> b) -> Vector n a -> Vector n b
 vmap fn v = Vec Proxy $ map fn $ vecToList v
 
-reals2 = Everything :: Set (Vector 2 RealNum)
-reals3 = Everything :: Set (Vector 3 RealNum)
-reals4 = Everything :: Set (Vector 4 RealNum)
+reals2 = Everything :: Set (RealD 2)
+reals3 = Everything :: Set (RealD 3)
+reals4 = Everything :: Set (RealD 4)
