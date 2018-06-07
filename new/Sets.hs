@@ -20,11 +20,27 @@
 -- To fix these problems we'll attach Symbols to the sets.
 
 module Sets(
+  Set,
   Defined(contains),
   AllOf,
   SomeSet,
   everything,
   (%),
+
+  (∈), member, -- u2208
+  (∉), notMember, -- u2209
+  valid,
+
+  empty, intersect, minus, complement, union, star, unionAll, intersectAll,
+  thereExists, singleton, forAll, isEmpty, isSingleton, setEquals, (===), (=/=),
+  singletonOf, smap, cartesian,
+
+  RealNum,
+  Positive,
+  Negative,
+  NonNegative,
+  Increasing,
+  NonDecreasing
 ) where
 
 import Data.Maybe (Maybe, isJust)
@@ -88,6 +104,9 @@ infix 4 ∉  -- Unicode hex 2209
 (∉) :: (Defined set contents) => contents -> set contents -> Bool
 (∉) = notMember
 
+valid :: (Defined AllOf w) => w -> Bool
+valid x = x ∈ everything
+
 ----------------- Base Ops ---------------------
 
 -- The empty set for the given type.
@@ -107,17 +126,6 @@ complement a = everything `minus` a
 
 -- Everything except elements that are not in both sets.
 union a b = complement $ intersect (complement a) (complement b)
-
--- Cartesian product.
--- TODO: move to analysis
-cartesian ::
-  (Eq w3,
-   Defined set1 w1,
-   Defined set2 w2,
-   Defined AllOf w3) =>
-  (w1 -> w2 -> w3) -> set1 w1 -> set2 w2 -> SomeSet w3
-cartesian fn setA setB = everything % \w ->
-  thereExists setA $ \x -> thereExists setB $ \y -> fn x y == w
 
 -- From a set S = {a, b, c, ...}
 -- Build a set S* = {0, a, b, c, ..., aa, ab, ac, ..., }
@@ -149,6 +157,9 @@ singleton set = error "***** MAGIC *****"
 
 -------------- Ops that need magic ------------------
 
+forAll :: (Defined set w) => set w -> (w -> Bool) -> Bool
+forAll set predicate = not $ thereExists set (not . predicate)
+
 isEmpty :: (Defined set w) => set w -> Bool
 isEmpty set = thereExists set $ \any -> True
 
@@ -175,6 +186,17 @@ singletonOf x = everything % \y -> y == x
 smap :: (Defined set1 a, Defined AllOf b, Eq b) =>
   (a -> b) -> set1 a -> SomeSet b
 smap fn set = everything % \y -> thereExists set $ \x -> fn x == y
+
+-- Cartesian product.
+-- TODO: move to analysis
+cartesian ::
+  (Eq w3,
+   Defined set1 w1,
+   Defined set2 w2,
+   Defined AllOf w3) =>
+  (w1 -> w2 -> w3) -> set1 w1 -> set2 w2 -> SomeSet w3
+cartesian fn setA setB = everything % \w ->
+  thereExists setA $ \x -> thereExists setB $ \y -> fn x y == w
 
 -------------- Examples ---------------------
 
