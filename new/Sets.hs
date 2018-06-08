@@ -20,6 +20,7 @@
 -- To fix these problems we'll attach Symbols to the sets.
 
 module Sets(
+  Set,
   Defined(candidate),
   AllOf,
   Subset,
@@ -71,7 +72,7 @@ class (Defined AllOf contents) => Defined set contents where
 
 -- To put a data type in a Set, need to define what "All" means.
 everything :: (Defined AllOf w) => AllOf w
-everything = Everything -- DO NOT CREATE Everything ANYWHERE ELSE
+everything = Everything
 
 valid :: (Defined AllOf w) => w -> Bool
 valid x = candidate everything x -- Prevent recursive definition
