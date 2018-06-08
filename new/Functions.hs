@@ -12,39 +12,57 @@ module Functions(
 import Sets
 import Data.Maybe
 
-data Fn (domain :: * -> *) a (codomain :: * -> *) b = Fn (a -> b)
+-------------- Definition & Accessors ------------------
 
--- This is just for type hint
-dom_ :: Fn dom a cod b -> dom a
-dom_ = error "Undefined"
+data Fn (dom :: * -> *) a (cod :: * -> *) b = Fn (a -> b) (dom a) (cod b)
 
-cod_ :: Fn dom a cod b -> cod b
-cod_ = error "Undefined"
+domain :: (Defined dom a) => Fn dom a cod b -> dom a
+domain (Fn _ dom _) = dom
 
-domain :: (Defined dom a, Defined AllOf a) => Fn dom a cod b -> SomeSet a
-domain fn = everything % \x -> x ∈ (dom_ fn) 
+codomain :: (Defined cod b) => Fn dom a cod b -> cod b
+codomain (Fn _ _ cod) = cod
 
-codomain :: (Defined cod b, Defined AllOf b) => Fn dom a cod b -> SomeSet b
-codomain fn = everything % \x -> x ∈ (cod_ fn) 
+f :: (Defined dom a, Defined cod b) => Fn dom a cod b -> a -> b
+f (Fn fn dom cod) x | x ∈ dom && (fn x) ∈ cod = fn x
 
-instance (
-    Defined dom a, Defined AllOf a, Defined cod b, Defined AllOf b
-    ) => Defined AllOf (Fn dom a cod b) where
-  contains _ ffn@(Fn fn) = -- Make sure fn is compatible with decl. dom, cod
-    forAll (domain ffn) $ \x -> (fn x) ∈ (codomain ffn)
+infixl 9 ← -- u2190
+fn ← x = f fn x
 
--- Evaluate
-f :: (
-    Defined dom a, Defined AllOf a, Defined cod b, Defined AllOf b
-  ) => Fn dom a cod b -> a -> b
-f ffn@(Fn fn) x | x ∈ domain ffn = fn x
+-------------- Instantiations ------------------
+
+-- Validation for functions.
+instance (Defined dom a, Defined cod b) => Defined AllOf (Fn dom a cod b) where
+  contains _ fn = -- Validate domain, codomain and f agree on function
+    forAll (domain fn) $ \x -> fn ← x ∈ codomain fn
+
+-- Generalized equals works when functions have different representations
+-- for domain and codomain, i.e. (Everything :: AllOf RealNum) === Subset True
+fnEquals :: 
+    (Defined dom1 a,
+     Defined dom2 a,
+     Defined AllOf a,
+     Defined cod1 b,
+     Defined cod2 b,
+     Defined AllOf b,
+     Eq b)
+    => Fn dom1 a cod1 b -> Fn dom2 a cod2 b -> Bool
+fnEquals f1 f2 = 
+    domain f1 === domain f2 && codomain f1 === codomain f2 &&
+    (forAll (domain f1) $ \x -> f f1 x == f f2 x)
 
 instance (
     Defined dom a, Defined AllOf a, Defined cod b, Defined AllOf b, Eq b
     ) => Eq (Fn dom a cod b) where
-  f1 == f2 = 
-    domain f1 === domain f2 && codomain f1 === codomain f2 &&
-    (forAll (domain f1) $ \x -> f f1 x == f f2 x)
+  f1 == f2 = f1 `fnEquals` f2
+
+-------------- Construction from raw functions. ------------------
+
+-- Clip a raw function into the given domain and codomain.
+-- Might not work if the function is undefined in some part of the domain.
+clip :: (Defined dom a, Defined cod b, Eq b)
+    => (a -> b) -> dom a -> cod b -> Maybe (Fn dom a cod b)
+clip fn dom cod = if valid candidate then Just candidate else Nothing
+  where candidate = (Fn fn dom cod)
 
 box :: (
     Defined dom a, Defined AllOf a, Defined cod b, Defined AllOf b, Eq b
