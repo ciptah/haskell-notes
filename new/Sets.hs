@@ -36,11 +36,13 @@ module Sets(
   singletonOf, smap, cartesian,
   isSubsetOf, (⊆), isDisjoint, -- u2286
   (∪), (∩), -- u222a, u2229
+  power, countableUnions, isPairwiseDisjoint,
 
   RealNum,
   Positive,
   Negative,
   NonNegative,
+  ZeroOne,
   Increasing,
   NonDecreasing
 ) where
@@ -85,11 +87,40 @@ set % predicate = Subset predicate set
 instance (Defined AllOf r) => Defined Subset r where
   candidate (Subset p set) x = candidate set x && p x
 
+-- If we can define what "all of x" is, then we can define all of its subsets.
+instance (Defined AllOf r) => Defined AllOf (Subset r) where
+  candidate _ subset = subset ⊆ everything -- is this always True?
+
 -- If some set of r is defined, then the same kind of set on the list of r
 -- is also defined. This means from (Positive Integer) we can get definition
 -- of (Positive [Intenger]), (Positive [[Integer]]), ...
 instance (Defined (Set z) r) => Defined (Set z) [r] where
   candidate set xs = and $ map valid xs
+
+instance (Defined AllOf x0, Defined AllOf x1) => Defined AllOf (x0, x1) where
+  candidate set (x0, x1) = valid x0 && valid x1
+
+instance (Defined AllOf x0, Defined AllOf x1, Defined AllOf x2)
+    => Defined AllOf (x0, x1, x2) where
+  candidate set (x0, x1, x2) = valid x0 && valid x1 && valid x2
+
+instance (
+    Defined AllOf x0,
+    Defined AllOf x1,
+    Defined AllOf x2,
+    Defined AllOf x3
+    ) => Defined AllOf (x0, x1, x2, x3) where
+  candidate set (x0, x1, x2, x3) = valid x0 && valid x1 && valid x2 && valid x3
+
+instance (
+    Defined AllOf x0,
+    Defined AllOf x1,
+    Defined AllOf x2,
+    Defined AllOf x3,
+    Defined AllOf x4
+    ) => Defined AllOf (x0, x1, x2, x3, x4) where
+  candidate set (x0, x1, x2, x3, x4) =
+    valid x0 && valid x1 && valid x2 && valid x3 && valid x4
 
 instance (Defined AllOf r, Eq r) => Defined [] r where
   candidate list x = x `elem` list
@@ -183,6 +214,9 @@ set1 === set2 = set1 `setEquals` set2
 infix 4 =/=
 set1 =/= set2 = not $ set1 === set2
 
+instance Defined AllOf w => Eq (Subset w) where
+  s1 == s2 = s1 === s2
+
 -- Construct a singleton set.
 singletonOf :: (Eq w, Defined AllOf w) => w -> Subset w
 singletonOf x = everything % \y -> y == x
@@ -203,7 +237,11 @@ cartesian ::
 cartesian fn setA setB = everything % \w ->
   thereExists setA $ \x -> thereExists setB $ \y -> fn x y == w
 
--------------- Examples ---------------------
+-------------- Subset operators ---------------------
+
+-- Turns a generic set into a subset, hiding its original type.
+mask :: (Defined set w) => set w -> Subset w
+mask set = set % \x -> True
 
 -- isEmpty isn't necessary. Just compare with empty
 -- The empty set is disjoint with itself [wikipedia].
@@ -212,22 +250,49 @@ x `isDisjoint` y = x ∩ y === empty
 infix 4 ⊆ -- u2286
 a ⊆ b = a `isSubsetOf` b
 
+power :: (Defined AllOf w) => Subset w -> Subset (Subset w)
+power set = everything % \sub -> sub ⊆ set
+
+-- Given a set of sets X, return the set of sets made by countable unions
+-- of elements of X.
+countableUnions :: (Defined AllOf a, Defined set (Subset a))
+  => set (Subset a) -> Subset (Subset a)
+countableUnions x =
+    everything % \y -> thereExists (star x) $ \seq -> unionAll seq == y
+
+-- isPairwiseDisjoint intentionally not from Set (Set a), but from [Set a].
+-- This is so the behavior in duplicate sets is defined (will return False)
+-- Take care not to include the set in the same indices as pairs
+-- This method is computable for list sets.
+isPairwiseDisjoint :: Defined AllOf a => [Subset a] -> Bool
+isPairwiseDisjoint sets = and $ map disjoint setPairs
+  where indices = [0..(length sets)]
+        indexPairs = [(x, y) | x <- indices, y <- indices]
+        diffPairs = filter (\(x, y) -> x /= y) indexPairs
+        setPairs = map (\(x, y) -> (sets!!x, sets!!y)) diffPairs
+        disjoint (x, y) = x `isDisjoint` y
+
 -------------- Examples ---------------------
 
 type RealNum = Double
 type Positive = Set "> 0"
 type Negative = Set "< 0"
 type NonNegative = Set ">= 0"
+type ZeroOne = Set "[0, 1]"
 
 type Increasing = Set "Increasing"
 type NonDecreasing = Set "NonDecreasing"
+
+instance Defined AllOf Bool where candidate set x = True
 
 instance Defined AllOf RealNum where candidate set x = True
 instance Defined Positive RealNum where candidate set x = x > 0
 instance Defined Negative RealNum where candidate set x = x < 0
 instance Defined NonNegative RealNum where candidate set x = x >= 0
+instance Defined ZeroOne RealNum where candidate set x = x >= 0 && x <= 1
 
 instance Defined AllOf Integer where candidate set x = True
 instance Defined Positive Integer where candidate set x = x > 0
 instance Defined Negative Integer where candidate set x = x < 0
 instance Defined NonNegative Integer where candidate set x = x >= 0
+instance Defined ZeroOne Integer where candidate set x = x >= 0 && x <= 1
