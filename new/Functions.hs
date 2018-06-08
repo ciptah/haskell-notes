@@ -1,7 +1,4 @@
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
@@ -22,7 +19,7 @@ import Data.Maybe
 
 -------------- Definition & Accessors ------------------
 
-data Fn (dom :: * -> *) a (cod :: * -> *) b = Fn (a -> b) (dom a) (cod b)
+data Fn dom a cod b = Fn (a -> b) (dom a) (cod b)
 
 domain :: (Defined dom a) => Fn dom a cod b -> dom a
 domain (Fn _ dom _) = dom
