@@ -32,7 +32,7 @@ fn ← x = f fn x
 
 -- Validation for functions.
 instance (Defined dom a, Defined cod b) => Defined AllOf (Fn dom a cod b) where
-  contains _ fn = -- Validate domain, codomain and f agree on function
+  candidate _ fn = -- Validate domain, codomain and f agree on function
     forAll (domain fn) $ \x -> fn ← x ∈ codomain fn
 
 -- Generalized equals works when functions have different representations
@@ -40,10 +40,8 @@ instance (Defined dom a, Defined cod b) => Defined AllOf (Fn dom a cod b) where
 fnEquals :: 
     (Defined dom1 a,
      Defined dom2 a,
-     Defined AllOf a,
      Defined cod1 b,
      Defined cod2 b,
-     Defined AllOf b,
      Eq b)
     => Fn dom1 a cod1 b -> Fn dom2 a cod2 b -> Bool
 fnEquals f1 f2 = 
@@ -60,13 +58,12 @@ instance (
 -- Clip a raw function into the given domain and codomain.
 -- Might not work if the function is undefined in some part of the domain.
 clip :: (Defined dom a, Defined cod b, Eq b)
-    => (a -> b) -> dom a -> cod b -> Maybe (Fn dom a cod b)
+  => (a -> b) -> dom a -> cod b -> Maybe (Fn dom a cod b)
 clip fn dom cod = if valid candidate then Just candidate else Nothing
   where candidate = (Fn fn dom cod)
 
-box :: (
-    Defined dom a, Defined AllOf a, Defined cod b, Defined AllOf b, Eq b
-  ) => (a -> b) -> Maybe (Fn dom a cod b)
+box :: (Defined dom a, Defined cod b, Eq b)
+  => (a -> b) -> Maybe (Fn dom a cod b)
 -- To make a "raw" Haskell fn well-defined, pick the unique function that has
 -- the desired domain and codomain, that has the same behavior as fn within
 -- the domain (assuming fn is defined everywhere in the domain)

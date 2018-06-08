@@ -5,7 +5,8 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE Rank2Types #-}
-{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE UndecidableSuperClasses #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 -- Set theory in Haskell (v2)
 -- There are two "primitive" operations:
@@ -20,7 +21,7 @@
 -- To fix these problems we'll attach Symbols to the sets.
 
 module Sets(
-  Defined(contains),
+  Defined(candidate),
   AllOf,
   Subset,
   everything,
@@ -59,13 +60,20 @@ type AllOf = Set "All"
 data Subset w = forall set. (Defined set w) => Subset (w -> Bool) (set w)
 
 -- Sets that are "Defined" means one can test whether an element is included
--- within the set.
-class Defined set contents where
-  contains :: set contents -> contents -> Bool
+-- within the set. The special "AllOf x" construction has to be defined first,
+-- then any custom singleton subset can be defined.
+class (Defined AllOf contents) => Defined set contents where
+  -- Means this element meets some necessary requirement ot be part of the set.
+  -- However, the element still has to satisfy (AllOf contents) before it can
+  -- be said to be part of the set.
+  candidate :: set contents -> contents -> Bool
 
 -- To put a data type in a Set, need to define what "All" means.
 everything :: (Defined AllOf w) => AllOf w
 everything = Everything -- DO NOT CREATE Everything ANYWHERE ELSE
+
+valid :: (Defined AllOf w) => w -> Bool
+valid x = candidate everything x -- Prevent recursive definition
 
 -- Shorthand for subset constructor
 infixl 1 %
@@ -74,21 +82,23 @@ set % predicate = Subset predicate set
 
 --------------------------------------------
 
-instance Defined Subset r where
-  contains (Subset p set) x = contains set x && p x
+instance (Defined AllOf r) => Defined Subset r where
+  candidate (Subset p set) x = candidate set x && p x
 
--- List of sets are OK.
-instance (Defined AllOf r) => Defined AllOf [r] where
-  contains set xs = and $ map (contains everything) xs
+-- If some set of r is defined, then the same kind of set on the list of r
+-- is also defined. This means from (Positive Integer) we can get definition
+-- of (Positive [Intenger]), (Positive [[Integer]]), ...
+instance (Defined (Set z) r) => Defined (Set z) [r] where
+  candidate set xs = and $ map valid xs
 
-instance (Eq r) => Defined [] r where
-  contains list x = x `elem` list
+instance (Defined AllOf r, Eq r) => Defined [] r where
+  candidate list x = x `elem` list
 
 -------------- Membership ------------------
 
 infix 4 ∈  -- Unicode hex 2208
 (∈) :: (Defined set contents) => contents -> set contents -> Bool
-(∈) = flip contains
+x ∈ set = valid x && candidate set x
 
 member :: (Defined set contents) => contents -> set contents -> Bool
 member = (∈)
@@ -99,9 +109,6 @@ notMember x set = not (x ∈ set)
 infix 4 ∉  -- Unicode hex 2209
 (∉) :: (Defined set contents) => contents -> set contents -> Bool
 (∉) = notMember
-
-valid :: (Defined AllOf w) => w -> Bool
-valid x = x ∈ everything
 
 ----------------- Base Ops ---------------------
 
@@ -133,16 +140,13 @@ a ∩ b = a `intersect` b
 -- Also known as a Kleene star.
 -- This is intentionally a list, so aaba /= aba /= baaa
 -- The second constraint is necessary to make "everything" work.
-star :: (Defined set w, Defined AllOf w) => set w -> Subset [w]
-star set = everything % \xs -> and $ map (set `contains`) xs
+star :: (Defined set w) => set w -> Subset [w]
+star set = everything % \xs -> and $ map (set `candidate`) xs
 
-unionAll ::
-  (Defined set a, Defined AllOf a, Foldable t) =>
-  t (set a) -> Subset a
+unionAll :: (Defined set a, Foldable t) => t (set a) -> Subset a
 unionAll = foldr union empty
 
-intersectAll ::
-  (Defined set a, Defined AllOf a, Foldable t) =>
+intersectAll :: (Defined set a, Foldable t) =>
   t (set a) -> Subset a
 intersectAll = foldr intersect (everything % \x -> True)
 
@@ -168,7 +172,7 @@ isEmpty set = thereExists set $ \any -> True
 isSingleton set = isJust $ singleton set
 
 -- Instance "Eq" doesn't work here because the types are different.
-setEquals :: (Defined set1 w, Defined set2 w, Defined AllOf w) =>
+setEquals :: (Defined set1 w, Defined set2 w) =>
   set1 w -> set2 w -> Bool
 setEquals set1 set2 = not $ thereExists everything $ \x ->
   (x ∈ set1 && x ∉ set2) || (x ∈ set2 && x ∉ set1)
@@ -218,12 +222,12 @@ type NonNegative = Set ">= 0"
 type Increasing = Set "Increasing"
 type NonDecreasing = Set "NonDecreasing"
 
-instance Defined AllOf RealNum where contains set x = True
-instance Defined Positive RealNum where contains set x = x > 0
-instance Defined Negative RealNum where contains set x = x < 0
-instance Defined NonNegative RealNum where contains set x = x >= 0
+instance Defined AllOf RealNum where candidate set x = True
+instance Defined Positive RealNum where candidate set x = x > 0
+instance Defined Negative RealNum where candidate set x = x < 0
+instance Defined NonNegative RealNum where candidate set x = x >= 0
 
-instance Defined AllOf Integer where contains set x = True
-instance Defined Positive Integer where contains set x = x > 0
-instance Defined Negative Integer where contains set x = x < 0
-instance Defined NonNegative Integer where contains set x = x >= 0
+instance Defined AllOf Integer where candidate set x = True
+instance Defined Positive Integer where candidate set x = x > 0
+instance Defined Negative Integer where candidate set x = x < 0
+instance Defined NonNegative Integer where candidate set x = x >= 0
