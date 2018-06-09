@@ -140,6 +140,7 @@ convergentSubseq seq =
   Everything % \subseq ->
     subseq `isSubsequenceOf` seq && (isJust $ convergence subseq)
 
+-- Every bounded sequence has a convergent subsequence.
 bolzanoWeierstrassClaim = forAll boundedSequences $ \bseq ->
   convergentSubseq bseq /= empty
   where boundedSequences = Everything % \seq -> isBounded seq

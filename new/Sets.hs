@@ -36,7 +36,7 @@ module Sets(
   singletonOf, smap, cartesian,
   isSubsetOf, (⊆), isDisjoint, -- u2286
   (∪), (∩), -- u222a, u2229
-  power, countableUnions, isPairwiseDisjoint,
+  power, countableUnions, isPairwiseDisjoint, collapse,
 
   RealNum,
   Positive,
@@ -278,6 +278,9 @@ isPairwiseDisjoint sets = and $ map disjoint setPairs
         diffPairs = filter (\(x, y) -> x /= y) indexPairs
         setPairs = map (\(x, y) -> (sets!!x, sets!!y)) diffPairs
         disjoint (x, y) = x `isDisjoint` y
+
+collapse :: (Defined set (Maybe a), Defined AllOf a) => set (Maybe a) -> Subset a
+collapse s = everything % \x -> Just x ∈ s
 
 -------------- Examples ---------------------
 

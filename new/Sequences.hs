@@ -5,6 +5,10 @@
 {-# LANGUAGE DataKinds #-}
 
 module Sequences (
+  Convergence(..), ConvRD,
+  realConverges, converges, pushConv, limit,
+  subseq, convergentSubseq,
+  foldOrdered, foldFinite, foldCountable
 ) where
 
 import GHC.TypeLits
@@ -137,20 +141,26 @@ bolzanoWeierstrassClaim = forAll
 -------------- Folding Sets ------------------
 
 -- Fold a countable infinite sequence.
-foldOrder :: (Defined dom a, Defined AllOf b, Eq b)
+foldOrdered :: (Defined dom a, Defined AllOf b, Eq b)
   => (a -> b -> b) -> b -> Sequence dom a -> Maybe (Sequence AllOf b)
-foldOrder fn zero sequence = box $
+foldOrdered fn zero sequence = box $
   \n -> let candidateb = foldr fn zero $ map (f sequence) [1..n] in
     if valid candidateb then candidateb else error "Invalid"
 
 -- Given a (countably infinite) set, fold all values in that set according
 -- to some function. This might depend on the order, so the result is the set
 -- of sequence of fold results.
+foldFinite :: (Eq a, Eq b, Defined set a, Defined AllOf b)
+  => (a -> b -> b) -> b -> set a -> Subset b
 foldFinite fn zero set | finite set =
   everything % \x -> thereExists (toList set) $
     \lst -> foldr fn zero lst == x
 
 -- Technically toList already works for countably infinite sets, but here's
 -- an alternate definition
-foldCountable fn zero set
-  | countable set = error "1" 
+foldCountable
+  :: (Eq a, Eq b, Defined dom a, Defined (Set "All") b) =>
+     (a -> b -> b) -> b -> dom a -> Subset (Sequence AllOf b)
+foldCountable fn zero set | countable set = collapse $
+  smap (foldOrdered fn zero) $
+  mappers (Everything :: Positive Integer) set
