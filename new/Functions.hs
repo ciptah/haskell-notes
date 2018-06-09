@@ -10,6 +10,7 @@ module Functions(
   fnEquals,
   clip, box,
   preimage, preimageOf, range,onto, one2one, bijective,
+  (<.),
 
   RealFn, TimeFn, PositiveFn, ZeroOneFn, Sequence
 ) where
@@ -30,7 +31,7 @@ codomain (Fn _ _ cod) = cod
 f :: (Defined dom a, Defined cod b) => Fn dom a cod b -> a -> b
 f (Fn fn dom cod) x | x ∈ dom && (fn x) ∈ cod = fn x
 
-infixl 9 ← -- u2190
+infixr 9 ← -- u2190
 fn ← x = f fn x
 
 -------------- Instantiations ------------------
@@ -102,6 +103,18 @@ one2one fn = -- Alternative way of saying it.
 bijective :: (Eq b, Defined cod b, Defined dom a) => Fn dom a cod b -> Bool
 bijective fn = one2one fn && onto fn
 
+-------------- Composition ---------------------
+
+-- Be careful!!
+-- For "Set" types, i.e. singleton types with only Everything, this is 
+-- guaranteed to produce a function. However when the set type isn't singleton
+-- (subsets, open balls), it can be problematic. I'll allow it with the
+-- understanding that it could fail to turn up a function.
+(<.) :: (Defined dom a, Defined cod1 b, Defined cod2 c)
+  => Fn cod1 b cod2 c -> Fn dom a cod1 b -> Fn dom a cod2 c
+f2 <. f1 | valid candidate = candidate
+  where candidate = Fn (f f2 . f f1) (domain f1) (codomain f2)
+
 -------------- Examples ---------------------
 
 type RealFn dom a = Fn dom a AllOf RealNum -- A->R functions.
@@ -115,3 +128,15 @@ type ZeroOneFn dom a = Fn dom a ZeroOne RealNum
 
 -- Sequences are functions from integers.
 type Sequence cod b = Fn Positive Integer cod b
+
+instance (Defined set1 a, Defined set2 b, Ord a, Ord b)
+    => Defined Increasing (Fn set1 a set2 b) where
+  candidate _ fn = forAll everything $ \(x1, x2) -> 
+    x1 ∈ domain fn && x2 ∈ domain fn &&
+    if x1 < x2 then f fn x1 < f fn x2 else True
+
+instance (Defined set1 a, Defined set2 b, Ord a, Ord b)
+    => Defined NonDecreasing (Fn set1 a set2 b) where
+  candidate _ fn = forAll everything $ \(x1, x2) -> 
+    x1 ∈ domain fn && x2 ∈ domain fn &&
+    if x1 < x2 then f fn x1 <= f fn x2 else True

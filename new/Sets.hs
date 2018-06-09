@@ -44,10 +44,12 @@ module Sets(
   NonNegative,
   ZeroOne,
   Increasing,
-  NonDecreasing
+  NonDecreasing,
+  Time,
+  Naturals,
 ) where
 
-import Data.Maybe (Maybe, isJust)
+import Data.Maybe
 
 import GHC.TypeLits
 import Data.Proxy
@@ -125,6 +127,10 @@ instance (
 
 instance (Defined AllOf r, Eq r) => Defined [] r where
   candidate list x = x `elem` list
+
+instance (Defined AllOf r, Eq r) => Defined AllOf (Maybe r) where
+  candidate _ (Just x) = valid x
+  candidate _ Nothing = True
 
 -------------- Membership ------------------
 
@@ -297,6 +303,9 @@ instance Defined Positive Integer where candidate set x = x > 0
 instance Defined Negative Integer where candidate set x = x < 0
 instance Defined NonNegative Integer where candidate set x = x >= 0
 instance Defined ZeroOne Integer where candidate set x = x >= 0 && x <= 1
+
+type Time = NonNegative RealNum
+type Naturals = Positive Integer
 
 instance Defined Increasing [RealNum] where
   candidate _ [] = True

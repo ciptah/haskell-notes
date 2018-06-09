@@ -6,6 +6,7 @@
 {-# LANGUAGE Rank2Types #-}
 
 module Vectors (
+  Zero(zero),
   Vector(Vec),
   dim,
   (@@),
@@ -13,7 +14,7 @@ module Vectors (
   vzip, vmap, (|+|), (|-|), (|*), (*|),
   norm1, norm2, normInf, perpendicular,
   Selection,
-  sel,
+  sel, selFn, pickFn,
   (!>),
   project,
 
@@ -22,7 +23,10 @@ module Vectors (
 
 import GHC.TypeLits
 import Data.Proxy
+import Data.Maybe (fromJust)
+
 import Sets
+import Functions
 
 -------------- Basics ------------------
 
@@ -65,6 +69,9 @@ instance (KnownNat n, Zero a, Show a) => Show (Vector n a) where
 -- All vector elements must be valid instances of a (relative to AllOf a).
 instance (KnownNat n, Zero a, Defined AllOf a) => Defined AllOf (Vector n a)
   where candidate _ x = and $ map valid $ vecToList x
+
+instance (Zero a, Ord a) => Ord (Vector 1 a)
+  where v1 <= v2 = v1 @@ 0 <= v2 @@ 0
 
 -------------- Vector ops ------------------
 
@@ -144,6 +151,19 @@ project
       KnownNat m, KnownNat n) =>
      set (Vector n a) -> Selection m n -> Subset (Vector m a)
 project vs selection = smap (\v -> v !> selection) vs
+
+selFn :: (KnownNat n, KnownNat m, Zero a,
+          Defined set (Vector n a),
+          Defined set (Vector m a))
+  => Selection m n -> Fn set (Vector n a) set (Vector m a)
+selFn sel = fromJust $ box $ (!> sel)
+
+-- The "set" constraint isn't propagated form the vector to the contents.
+pickFn :: (KnownNat n, Zero a,
+          Defined set (Vector n a),
+          Defined AllOf a)
+  => Integer -> Fn set (Vector n a) AllOf a
+pickFn d = fromJust $ box $ (@@ d)
 
 -------------- Examples ---------------------
 

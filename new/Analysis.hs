@@ -11,7 +11,8 @@ module Analysis(
   supremum, infimum,
   supremumFn, infimumFn, mappers,
   equalCardinality, finite, countable,
-  interior, neighborhood, isolated, boundary, accumulation
+  interior, neighborhood, isolated, boundary, accumulation,
+  toList
 ) where
 
 import Sets
@@ -143,3 +144,7 @@ boundary set x | using "Negation" =
 -- but it may not even belong to the set.
 accumulation :: (Defined set (RD n), KnownNat n) => set (RD n) -> RD n -> Bool
 accumulation set x = not $ isolated (set ∪ singletonOf x) x
+
+-- Find lists with the same element as the set.
+toList :: (Eq a, Defined set a) => set a -> Subset [a]
+toList set = everything % \lst -> lst === set
