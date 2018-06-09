@@ -306,4 +306,4 @@ instance Defined Increasing [RealNum] where
 instance Defined NonDecreasing [RealNum] where
   candidate _ [] = True
   candidate _ (x:[]) = True
-  candidate set (y:(x:xs)) = y < x && candidate set (x:xs)
+  candidate set (y:(x:xs)) = y <= x && candidate set (x:xs)
