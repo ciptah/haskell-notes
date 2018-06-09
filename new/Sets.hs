@@ -20,7 +20,7 @@
 -- To fix these problems we'll attach Symbols to the sets.
 
 module Sets(
-  Set,
+  Set(Everything),
   Defined(candidate),
   AllOf,
   Subset,
@@ -94,7 +94,8 @@ instance (Defined AllOf r) => Defined AllOf (Subset r) where
 -- If some set of r is defined, then the same kind of set on the list of r
 -- is also defined. This means from (Positive Integer) we can get definition
 -- of (Positive [Intenger]), (Positive [[Integer]]), ...
-instance (Defined (Set z) r) => Defined (Set z) [r] where
+-- UNDECIDABLE: instance (Defined (Set z) r) => Defined (Set z) [r] where
+instance (Defined AllOf r) => Defined AllOf [r] where
   candidate set xs = and $ map valid xs
 
 instance (Defined AllOf x0, Defined AllOf x1) => Defined AllOf (x0, x1) where
@@ -286,8 +287,8 @@ type NonDecreasing = Set "NonDecreasing"
 instance Defined AllOf Bool where candidate set x = True
 
 instance Defined AllOf RealNum where candidate set x = True
-instance Defined Positive RealNum where candidate set x = x > 0
-instance Defined Negative RealNum where candidate set x = x < 0
+instance Defined Positive RealNum where candidate set x = x > 0 -- strictly
+instance Defined Negative RealNum where candidate set x = x < 0 -- strictly
 instance Defined NonNegative RealNum where candidate set x = x >= 0
 instance Defined ZeroOne RealNum where candidate set x = x >= 0 && x <= 1
 

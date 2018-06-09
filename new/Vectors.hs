@@ -17,7 +17,7 @@ module Vectors (
   (!>),
   project,
 
-  R1, R2, RD, UnitBall, Direction
+  R1, R2, RD, UnitBall, Direction, OpenBall(..)
 ) where
 
 import GHC.TypeLits
@@ -109,6 +109,9 @@ normInf v = maximum $ vecToList $ vmap abs v
 perpendicular :: (KnownNat n) => Vector n RealNum -> Vector n RealNum -> Bool
 perpendicular v1 v2 = v1 |.| v2 == 0
 
+distance :: (KnownNat n) => Vector n RealNum -> Vector n RealNum -> RealNum
+distance v1 v2 = norm2 $ v1 |-| v2
+
 -------------- Selection/projection ------------------
 
 -- Select m unique things from 0..n-1
@@ -145,15 +148,23 @@ project vs selection = smap (\v -> v !> selection) vs
 -------------- Examples ---------------------
 
 -- Sets of vectors in N dimensions.
-type R1 = AllOf (Vector 1 RealNum)
-type R2 = AllOf (Vector 2 RealNum)
-type RD n = AllOf (Vector n RealNum)
+type R1 = Vector 1 RealNum
+type R2 = Vector 2 RealNum
+type RD n = Vector n RealNum
 
-type UnitBall n = Set "UnitBall" (Vector n RealNum)
-type Direction n = Set "Direction" (Vector n RealNum)
+type UnitBall = Set "UnitBall"
+type Direction = Set "Direction"
 
-instance (KnownNat n) => Defined (Set "UnitBall") (Vector n RealNum) where
+-- Open balls are important for neighborhoods, and open sets.
+data OpenBall v = OpenBall {
+  center :: v,
+  radius :: RealNum
+}
+
+instance (KnownNat n) => Defined UnitBall (RD n) where
   candidate _ v = norm2 v <= 1.0
-instance (KnownNat n) => Defined (Set "Direction") (Vector n RealNum) where
+instance (KnownNat n) => Defined Direction (RD n) where
   candidate _ v = norm2 v == 1.0
+instance (KnownNat n) => Defined OpenBall (RD n) where
+  candidate (OpenBall c rad) v = distance c v < rad
 

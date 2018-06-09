@@ -104,7 +104,7 @@ bijective fn = one2one fn && onto fn
 
 -------------- Examples ---------------------
 
-type RealFn = Fn AllOf RealNum AllOf RealNum -- R->R functions.
+type RealFn dom a = Fn dom a AllOf RealNum -- A->R functions.
 type TimeFn cod b = Fn NonNegative RealNum cod b -- Functions with R>=0 domain
 
 -- Functions to the positive reals (like for example a density function)
