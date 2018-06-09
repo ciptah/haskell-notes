@@ -125,6 +125,7 @@ using = error "Blah"
 -- a boundary point of A if for every δ > 0 the interval (x − δ, x + δ)
 -- contains points in A and points not in A
 boundary :: (Defined set (RD n), KnownNat n) => set (RD n) -> RD n -> Bool
+-- Two equivalent definitions.
 boundary set x | using "Self definition" =
   forAll (Everything :: Positive RealNum) $
     \d -> let ball = OpenBall x d in

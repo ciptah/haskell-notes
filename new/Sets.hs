@@ -297,3 +297,13 @@ instance Defined Positive Integer where candidate set x = x > 0
 instance Defined Negative Integer where candidate set x = x < 0
 instance Defined NonNegative Integer where candidate set x = x >= 0
 instance Defined ZeroOne Integer where candidate set x = x >= 0 && x <= 1
+
+instance Defined Increasing [RealNum] where
+  candidate _ [] = True
+  candidate _ (x:[]) = True
+  candidate set (y:(x:xs)) = y < x && candidate set (x:xs)
+
+instance Defined NonDecreasing [RealNum] where
+  candidate _ [] = True
+  candidate _ (x:[]) = True
+  candidate set (y:(x:xs)) = y < x && candidate set (x:xs)
