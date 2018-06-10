@@ -100,31 +100,6 @@ instance (Defined AllOf r) => Defined AllOf (Subset r) where
 instance (Defined AllOf r) => Defined AllOf [r] where
   candidate set xs = and $ map valid xs
 
-instance (Defined AllOf x0, Defined AllOf x1) => Defined AllOf (x0, x1) where
-  candidate set (x0, x1) = valid x0 && valid x1
-
-instance (Defined AllOf x0, Defined AllOf x1, Defined AllOf x2)
-    => Defined AllOf (x0, x1, x2) where
-  candidate set (x0, x1, x2) = valid x0 && valid x1 && valid x2
-
-instance (
-    Defined AllOf x0,
-    Defined AllOf x1,
-    Defined AllOf x2,
-    Defined AllOf x3
-    ) => Defined AllOf (x0, x1, x2, x3) where
-  candidate set (x0, x1, x2, x3) = valid x0 && valid x1 && valid x2 && valid x3
-
-instance (
-    Defined AllOf x0,
-    Defined AllOf x1,
-    Defined AllOf x2,
-    Defined AllOf x3,
-    Defined AllOf x4
-    ) => Defined AllOf (x0, x1, x2, x3, x4) where
-  candidate set (x0, x1, x2, x3, x4) =
-    valid x0 && valid x1 && valid x2 && valid x3 && valid x4
-
 instance (Defined AllOf r, Eq r) => Defined [] r where
   candidate list x = x `elem` list
 

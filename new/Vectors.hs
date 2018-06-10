@@ -202,6 +202,11 @@ data Segment v = Segment {
   pointB :: v
 }
 
+instance Defined Positive R1 where
+  candidate _ v = v @@ 0 > 0
+instance Defined NonNegative R1 where
+  candidate _ v = v @@ 0 >= 0
+
 instance (KnownNat n) => Defined UnitBall (RD n) where
   candidate _ v = norm2 v <= 1.0
 instance (KnownNat n) => Defined Direction (RD n) where

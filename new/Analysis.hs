@@ -109,6 +109,8 @@ interior :: (Defined set (RD n), KnownNat n) => set (RD n) -> RD n -> Bool
 interior set x = thereExists (Everything :: Positive RealNum) $
   \d -> OpenBall x d ⊆ set
 
+-- Incidentally open sets are sets that are entirely made out of interior pts.
+
 -- Neighborhood if it contains an open ball of the point.
 -- The focus here is on the point, instead of the set.
 neighborhood :: (Defined set (RD n), KnownNat n) => RD n -> set (RD n) -> Bool

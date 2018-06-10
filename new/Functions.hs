@@ -152,12 +152,16 @@ type Sequence cod b = Fn Positive Integer cod b
 
 instance (Defined set1 a, Defined set2 b, Ord a, Ord b)
     => Defined Increasing (Fn set1 a set2 b) where
-  candidate _ fn = forAll everything $ \(x1, x2) ->
-    x1 ∈ domain fn && x2 ∈ domain fn &&
-    if x1 < x2 then f fn x1 < f fn x2 else True
+  candidate _ fn =
+    forAll everything $ \x1 ->
+      forAll everything $ \x2 ->
+        if x1 ∈ domain fn && x2 ∈ domain fn && x1 < x2
+        then f fn x1 < f fn x2 else True
 
 instance (Defined set1 a, Defined set2 b, Ord a, Ord b)
     => Defined NonDecreasing (Fn set1 a set2 b) where
-  candidate _ fn = forAll everything $ \(x1, x2) ->
-    x1 ∈ domain fn && x2 ∈ domain fn &&
-    if x1 < x2 then f fn x1 <= f fn x2 else True
+  candidate _ fn =
+    forAll everything $ \x1 ->
+      forAll everything $ \x2 ->
+        if x1 ∈ domain fn && x2 ∈ domain fn && x1 < x2
+        then f fn x1 <= f fn x2 else True
