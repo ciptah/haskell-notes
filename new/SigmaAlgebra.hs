@@ -9,14 +9,14 @@ module SigmaAlgebra (
 
 import Sets
 
-data SigmaAlgebra w = SigmaAlgebra {
-  outcomes :: Subset w,
+data SigmaAlgebra set w = SigmaAlgebra {
+  outcomes :: set w,
   events :: Subset (Subset w)
 }
 
 -- Define the validity of all sigma-algebra constructions.
 -- The SA must be self-consistent.
-instance (Defined AllOf w, Eq w) => Defined AllOf (SigmaAlgebra w) where
+instance (Defined set w, Eq w) => Defined AllOf (SigmaAlgebra set w) where
   candidate _ sa = and [
     -- Events must be subsets of the sample set.
     forAll (events sa) $ \ev -> ev ⊆ outcomes sa,
