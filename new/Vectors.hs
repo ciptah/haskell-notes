@@ -71,8 +71,17 @@ instance (KnownNat n, Zero a, Show a) => Show (Vector n a) where
 instance (KnownNat n, Zero a, Defined AllOf a) => Defined AllOf (Vector n a)
   where candidate _ x = and $ map valid $ vecToList x
 
-instance (Zero a, Ord a) => Ord (Vector 1 a)
-  where v1 <= v2 = v1 @@ 0 <= v2 @@ 0
+instance (Zero a, Ord a) => Ord (Vector 1 a) where
+  v1 <= v2 = v1 @@ 0 <= v2 @@ 0
+
+-- Ord is already defined separately
+instance (Zero a, Num a) => Num (Vector 1 a) where
+  x + y = x |+| y
+  x * y = Vec [x @@ 0 * y @@ 0]
+  fromInteger i = Vec [fromInteger i]
+  negate x = Vec [negate $ x @@ 0]
+  signum x = Vec [signum $ x @@ 0]
+  abs x = Vec [abs $ x @@ 0]
 
 -------------- Vector ops ------------------
 

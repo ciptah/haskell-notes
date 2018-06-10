@@ -66,14 +66,14 @@ directions p = Everything
 -- compute (f(x + h) - f(x) - dx . h) / h
 -- The wiki article uses Rm -> Rn, here we use Rn -> Rm
 derivativeFn_ :: (KnownNat n, Defined dom (RD n), Defined cod R1)
-  => Fn dom (RD n) cod R1 -> RD n -> RD n -> RD n -> RealNum
+  => Fn dom (RD n) cod R1 -> RD n -> RD n -> RD n -> R1
 derivativeFn_ fn x dx h =
-  norm2 (fn ← (x |+| h) |-| fn ← x |-| Vec [dx |.| h]) /  norm2 h
+  Vec [norm2 (fn ← (x |+| h) - fn ← x - Vec [dx |.| h]) /  norm2 h]
 
 -- Given dx, compute the limit of the above function as h -> 0
 limitDFN :: (KnownNat n, Defined dom (RD n), Defined cod R1)
   => Fn dom (RD n) cod R1 -> RD n -> RD n -> Maybe (ConvRD 1)
-limitDFN fn x dx = limitFn (safeBox $ toR1 . derivativeFn_ fn x dx) zeroV
+limitDFN fn x dx = limitFn (safeBox $ derivativeFn_ fn x dx) zeroV
 
 -- The gradient is the vector that can push the limitDFN to 0.
 gradient :: (KnownNat n, Defined dom (RD n), Defined cod R1)
