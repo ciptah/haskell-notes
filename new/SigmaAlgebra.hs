@@ -10,7 +10,7 @@ module SigmaAlgebra (
   borelRd,
 
   TimeIndexedSA,
-  filtrations,
+  filtrations, isFiltration
 ) where
 
 import Data.Maybe
