@@ -8,9 +8,9 @@ module Functions(
   codomain,
   f, (←),
   fnEquals,
-  clip, box,
+  clip, box, safeBox,
   preimage, preimageOf, range,onto, one2one, bijective,
-  (<.),
+  (<.), (<<.), rebox,
 
   RealFn, TimeFn, PositiveFn, ZeroOneFn, Sequence
 ) where
@@ -76,6 +76,11 @@ box :: (Defined dom a, Defined cod b, Eq b)
 box fn = singleton $ everything % \ffn ->
     (forAll (domain ffn) $ \x -> fn x == f ffn x)
 
+-- This one is guaranteed to success (provided we can solve the halting problem)
+safeBox :: (Defined AllOf a, Defined AllOf b) => (a -> b) -> Fn Subset a AllOf b
+safeBox f = Fn f (everything % \x -> halts f x && valid (f x)) everything
+  where halts f x = error "****** Halting problem *****"
+
 -------------- Imaging/range. ------------------
 
 preimage :: (Defined dom a, Defined cod b, Defined set b)
@@ -105,16 +110,32 @@ bijective fn = one2one fn && onto fn
 
 -------------- Composition ---------------------
 
--- Be careful!!
--- For "Set" types, i.e. singleton types with only Everything, this is 
--- guaranteed to produce a function. However when the set type isn't singleton
--- (subsets, open balls), it can be problematic. I'll allow it with the
--- understanding that it could fail to turn up a function.
-(<.) :: (Defined dom a, Defined cod1 b, Defined cod2 c)
-  => Fn cod1 b cod2 c -> Fn dom a cod1 b -> Fn dom a cod2 c
-f2 <. f1 | valid candidate = candidate
-  where candidate = Fn (f f2 . f f1) (domain f1) (codomain f2)
+-- change the box by making it pass thru validation again.
+rebox fn = box (f fn)
 
+-- Because of non-singleton set types (OpenBall, LineSegment, Subset)
+-- we technically can't guarantee that the type is "Fn dom a cod2 c"
+-- so we have to check the domain.
+safeCompose :: (Defined dom a, Defined cod1 b, Defined cod2 c)
+  => Fn cod1 b cod2 c -> Fn dom a cod1 b -> Fn Subset a cod2 c
+f2 `safeCompose` f1 | valid candidate = candidate
+  where candidate = Fn (f f2 . f f1) dom (codomain f2)
+        dom = domain f1 ∩ preimage f1 (domain f2 ∩ codomain f1)
+
+-- By using the operator versions we are making the statement that
+-- f2 is able to accept any value f1 returns
+infixr 9 <.
+(<.) :: (Eq c, Defined dom a, Defined cod1 b, Defined cod2 c)
+  => Fn cod1 b cod2 c -> Fn dom a cod1 b -> Fn dom a cod2 c
+f2 <. f1 = fromJust $ rebox $ f2 `safeCompose` f1
+
+-- In this version the outer function is a "raw" Haskell function.
+infixr 9 <<.
+(<<.) :: (Defined dom a, Defined cod1 b, Defined AllOf c, Eq c)
+  => (b -> c) -> Fn dom a cod1 b -> Fn dom a AllOf c
+f2 <<. f1 = (fromJust $ box f2) <. f1
+
+-- To change domain/range, just rebox.
 -------------- Examples ---------------------
 
 type RealFn dom a = Fn dom a AllOf RealNum -- A->R functions.
@@ -131,12 +152,12 @@ type Sequence cod b = Fn Positive Integer cod b
 
 instance (Defined set1 a, Defined set2 b, Ord a, Ord b)
     => Defined Increasing (Fn set1 a set2 b) where
-  candidate _ fn = forAll everything $ \(x1, x2) -> 
+  candidate _ fn = forAll everything $ \(x1, x2) ->
     x1 ∈ domain fn && x2 ∈ domain fn &&
     if x1 < x2 then f fn x1 < f fn x2 else True
 
 instance (Defined set1 a, Defined set2 b, Ord a, Ord b)
     => Defined NonDecreasing (Fn set1 a set2 b) where
-  candidate _ fn = forAll everything $ \(x1, x2) -> 
+  candidate _ fn = forAll everything $ \(x1, x2) ->
     x1 ∈ domain fn && x2 ∈ domain fn &&
     if x1 < x2 then f fn x1 <= f fn x2 else True

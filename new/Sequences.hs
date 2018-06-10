@@ -6,9 +6,10 @@
 
 module Sequences (
   Convergence(..), ConvRD,
-  realConverges, converges, pushConv, limit,
+  realConverges, converges, convRd, limit,
   subseq, convergentSubseq,
-  foldOrdered, foldFinite, foldCountable
+  foldOrdered, foldFinite, foldCountable,
+  approaches
 ) where
 
 import GHC.TypeLits
@@ -104,10 +105,13 @@ converges seq limit = converges_ Proxy seq limit
 
 -- In the special case where the convergence target is all finite (or infinite)
 -- We can define convergence in terms of Convergence (RD n)
-pushConv :: KnownNat n => Proxy n -> Convergence (RD n) -> ConvRD n
-pushConv p (Finite v) = Vec $ map (\i -> Finite $ v @@ i) $ [0..(dim v - 1)]
-pushConv p PosInf = Vec $ repeat PosInf
-pushConv p NegInf = Vec $ repeat NegInf
+toPoint_ :: KnownNat n => Proxy n -> Convergence (RD n) -> ConvRD n
+toPoint_ p (Finite v) = Vec $ map (\i -> Finite $ v @@ i) $ [0..(dim v - 1)]
+toPoint_ p PosInf = Vec $ repeat PosInf
+toPoint_ p NegInf = Vec $ repeat NegInf
+
+convRd :: KnownNat n => Convergence (RD n) -> ConvRD n
+convRd x = toPoint_ Proxy x
 
 -- Proposition 3.11 - Uniqueness of Convergence
 -- Analyze the convergence of this sequence of reals
@@ -164,3 +168,12 @@ foldCountable
 foldCountable fn zero set | countable set = collapse $
   smap (foldOrdered fn zero) $
   mappers (Everything :: Positive Integer) set
+
+-------------- Sequences that converge at a point ------------------
+-- Useful for defining limits, which defines derivatives/integrals
+
+approaches :: KnownNat n => ConvRD n -> Subset (Sequence AllOf (RD n))
+approaches target = everything % \seq ->
+  seq `converges` target &&
+  forAll (Everything :: Positive Integer) ( -- Remembber this part!
+    \n -> convRd (Finite (seq ← n)) /= target)

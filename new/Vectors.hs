@@ -17,6 +17,7 @@ module Vectors (
   sel, selFn, pickFn,
   (!>),
   project,
+  zeroV,
 
   R1, R2, RD, UnitBall, Direction, OpenBall(..)
 ) where
@@ -165,6 +166,9 @@ pickFn :: (KnownNat n, Zero a,
   => Integer -> Fn set (Vector n a) AllOf a
 pickFn d = fromJust $ box $ (@@ d)
 
+zeroV :: (KnownNat n) => Vector n RealNum
+zeroV = Vec []
+
 -------------- Examples ---------------------
 
 -- Sets of vectors in N dimensions.
@@ -181,10 +185,27 @@ data OpenBall v = OpenBall {
   radius :: RealNum
 }
 
+data Segment v = Segment {
+  pointA :: v,
+  pointB :: v
+}
+
 instance (KnownNat n) => Defined UnitBall (RD n) where
   candidate _ v = norm2 v <= 1.0
 instance (KnownNat n) => Defined Direction (RD n) where
   candidate _ v = norm2 v == 1.0
+
+-- Open balls of a certain radius centered around a point.
 instance (KnownNat n) => Defined OpenBall (RD n) where
   candidate (OpenBall c rad) v = distance c v < rad
+instance (KnownNat n) => Defined AllOf (OpenBall (RD n)) where
+  candidate _ (OpenBall c rad) = valid c && valid rad && rad >= 0
+
+-- Nontrivial line segment between two points.
+instance (KnownNat n) => Defined Segment (RD n) where
+  candidate (Segment pA pB) x = thereExists (Everything :: ZeroOne RealNum) $
+    \d -> x == pA |+| d *| (pB |-| pA)
+instance (KnownNat n) => Defined AllOf (Segment (RD n)) where
+  candidate _ (Segment pA pB) = valid pA && valid pB && pA /= pB
+   
 
