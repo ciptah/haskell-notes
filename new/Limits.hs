@@ -6,7 +6,9 @@
 
 module Limits (
   limitFn,
-  continuousAt
+  continuousAt,
+  gradient,
+  derivative
 ) where
 
 import Sets
@@ -46,45 +48,45 @@ continuousAt fn target
 
 -------------- Derivative/Differentiable ---------------------
 
+
+-- The gradient of f is defined as the unique vector field whose dot product
+-- with any unit vector v at each point x is the directional derivative of f
+-- along v.
+-- * For now, let's only consider gradients of the interior points of the domain
+--   because dealing with boundaries is a PITA.
+
 directions :: Proxy n -> Direction (RD n)
 directions p = Everything
 
--- Given x and direction dx (must be length 1 centered at 0), get a function
--- from positive h to df/dh value
-derivativeFn_ :: (KnownNat n, Defined dom (RD n), Defined cod R1)
-  => Proxy n -> Fn dom (RD n) cod R1 -> RD n -> RD n -> Fn Subset R1 AllOf R1
-derivativeFn_ p fn x dx | valid dx = safeBox $ \vh -> let h = vh @@ 0 in
-  if h > 0 then Vec [(ffn ← (x |+| h *| dx) - ffn ← x) / h]
-  else error "Invalid"
-  where ffn = (@@ 0) <<. fn
-        valid dx = dx ∈ directions p
-
--- Function from direction to directional derivative (rate of change)
-directionalDerivative
-  :: (KnownNat n, Defined dom (RD n), Defined cod R1) =>
-     Fn dom (RD n) cod R1 -> RD n -> Fn Direction (RD n) AllOf (Maybe (ConvRD 1))
-directionalDerivative fn x = fromJust $ box $ \dx ->
-  limitFn (derivativeFn_ Proxy fn x dx) zeroV -- limit h -> 0
-
-onlyFinites :: Subset (Maybe (ConvRD 1)) -> Subset (RD 1)
-onlyFinites subset = collapse $ smap change subset
-  where change (Just (Finite x)) = Just x
-        change _ = Nothing
-
 -- https://en.wikipedia.org/wiki/Gradient#Gradient_as_a_derivative
-gradientDirection
-  :: (KnownNat n, Defined dom (RD n), Defined cod R1) =>
-     Fn dom (RD n) cod R1 -> RD n -> Maybe (RD n)
-gradientDirection fn x | isJust maxDer =
-  singleton $ preimage dder $ singletonOf $ maxDer
-  where dder = directionalDerivative fn x -- direction (unit length) -> deriv
-        maxDer = supremum $ onlyFinites $ range dder -- Maximum value of DirDer
-        maxConvDer = Just (\x -> convRd x) <*> maxDer
-gradientDirection fn x | otherwise = Nothing
+-- http://mathworld.wolfram.com/DirectionalDerivative.html
+-- https://math.stackexchange.com/questions/372070/f-not-differentiable-at-0-0-but-all-directional-derivatives-exist
 
-gradient fn x = if isJust gdir then (Just $ dder *| fromJust gdir) else Nothing
-  where gdir = gradientDirection fn x
-        dderv | isJust gdir = (directionalDerivative fn x) ← fromJust gdir
-        dder | isJust gdir = fin $ (fromJust dderv) @@ 0
-        fin (Finite x) = x
+-- Given x and candidate gradient dx, and some delta vector h,
+-- compute (f(x + h) - f(x) - dx . h) / h
+-- The wiki article uses Rm -> Rn, here we use Rn -> Rm
+derivativeFn_ :: (KnownNat n, Defined dom (RD n), Defined cod R1)
+  => Fn dom (RD n) cod R1 -> RD n -> RD n -> RD n -> RealNum
+derivativeFn_ fn x dx h =
+  norm2 (fn ← (x |+| h) |-| fn ← x |-| Vec [dx |.| h]) /  norm2 h
+
+-- Given dx, compute the limit of the above function as h -> 0
+limitDFN :: (KnownNat n, Defined dom (RD n), Defined cod R1)
+  => Fn dom (RD n) cod R1 -> RD n -> RD n -> Maybe (ConvRD 1)
+limitDFN fn x dx = limitFn (safeBox $ toR1 . derivativeFn_ fn x dx) zeroV
+
+-- The gradient is the vector that can push the limitDFN to 0.
+gradient :: (KnownNat n, Defined dom (RD n), Defined cod R1)
+  => Fn dom (RD n) cod R1 -> RD n -> Maybe (RD n)
+gradient fn x | interior (domain fn) x = singleton $ everything %
+  \dx -> limitDFN fn x dx == (Just $ convRd $ Finite $ toR1 0)
+
+-- Derivative is just gradient for R->R functions
+derivative :: (Defined dom R1, Defined cod R1)
+  => Fn dom R1 cod R1 -> R1 -> Maybe R1
+derivative = gradient
+
+-- Interesting that we haven't linked this definition with integrals yet.
+-- That is, this isn't enough to compute the probability density function
+-- of a distribution.
 

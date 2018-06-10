@@ -11,7 +11,7 @@ module Vectors (
   dim,
   (@@),
   vecToList,
-  vzip, vmap, (|+|), (|-|), (|*), (*|),
+  vzip, vmap, (|+|), (|-|), (|*), (*|), (|.|),
   norm1, norm2, normInf, perpendicular,
   Selection,
   sel, selFn, pickFn,
@@ -19,7 +19,7 @@ module Vectors (
   project,
   zeroV,
 
-  R1, R2, RD, UnitBall, Direction, OpenBall(..)
+  R1, toR1, R2, RD, UnitBall, Direction, OpenBall(..)
 ) where
 
 import GHC.TypeLits
@@ -175,6 +175,9 @@ zeroV = Vec []
 type R1 = Vector 1 RealNum
 type R2 = Vector 2 RealNum
 type RD n = Vector n RealNum
+
+toR1 :: RealNum -> R1
+toR1 x = Vec [x] -- Turn RealNum to R1
 
 type UnitBall = Set "UnitBall"
 type Direction = Set "Direction"

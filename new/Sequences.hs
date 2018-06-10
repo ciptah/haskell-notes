@@ -9,7 +9,7 @@ module Sequences (
   realConverges, converges, convRd, limit,
   subseq, convergentSubseq,
   foldOrdered, foldFinite, foldCountable,
-  approaches
+  approaches, onlyFinites
 ) where
 
 import GHC.TypeLits
@@ -177,3 +177,11 @@ approaches target = everything % \seq ->
   seq `converges` target &&
   forAll (Everything :: Positive Integer) ( -- Remembber this part!
     \n -> convRd (Finite (seq ← n)) /= target)
+
+-- Filter to get only finite limits.
+onlyFinites
+  :: (Eq a, Defined set1 (Maybe (Convergence a)), Defined AllOf a) =>
+     set1 (Maybe (Convergence a)) -> Subset a
+onlyFinites subset = collapse $ smap change subset
+  where change (Just (Finite x)) = Just x
+        change _ = Nothing
