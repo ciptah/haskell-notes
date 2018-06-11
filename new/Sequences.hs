@@ -5,11 +5,11 @@
 {-# LANGUAGE DataKinds #-}
 
 module Sequences (
-  Convergence(..), Conv, ConvRD,
+  ExtR(..), ConvRD,
   realConverges, converges, convRd, limit,
   subseq, convergentSubseq,
   foldOrdered, foldFinite, foldCountable,
-  approaches, onlyFinites
+  approaches,
 ) where
 
 import GHC.TypeLits
@@ -22,10 +22,10 @@ import Functions
 import Vectors
 
 -- When we talk about sequences inevitably we'll talk about convergence.
-data Convergence a =
-  NegInf | PosInf | Finite a deriving (Eq, Show)
+data ExtR =
+  NegInf | PosInf | Finite RealNum deriving (Eq, Show)
 
-instance (Defined AllOf a) => Defined AllOf (Convergence a) where
+instance Defined AllOf ExtR where
   candidate _ NegInf = True
   candidate _ PosInf = True
   candidate _ (Finite a) = valid a
@@ -34,10 +34,10 @@ instance (Defined AllOf a) => Defined AllOf (Convergence a) where
 --   $1 - Operation
 --   $2, $3 - Operands
 --   $4, $5 - Result when +inf & -inf
-applyOp :: (a -> a -> a) ->
-  Convergence a -> Convergence a ->
-  Convergence a -> Convergence a ->
-  Convergence a
+applyOp :: (RealNum -> RealNum -> RealNum) ->
+  ExtR -> ExtR ->
+  ExtR -> ExtR ->
+  ExtR
 applyOp op (Finite x) (Finite y) _ _ = Finite $ x `op` y
 -- When both operands are infinity, it's undefined (error)
 applyOp op PosInf (Finite y) ip _ = ip
@@ -49,7 +49,7 @@ applyOp op NegInf NegInf _ im = im
 -- otherwise, is undefined
 
 -- Implement num so Convergence can be put into vectors.
-instance (Num a) => Num (Convergence a) where
+instance Num (ExtR) where
   c1 + c2 = applyOp (+) c1 c2 PosInf NegInf
   c1 * c2 = applyOp (*) c1 c2 PosInf NegInf
   fromInteger x = Finite (fromInteger x)
@@ -62,19 +62,17 @@ instance (Num a) => Num (Convergence a) where
   abs (Finite x) = Finite $ abs x
   abs PosInf = PosInf
   abs NegInf = PosInf
-instance (Ord a) => Ord (Convergence a) where
+instance Ord (ExtR) where
   (Finite x) <= (Finite y) = x < y
   PosInf <= _ = False
   _ <= PosInf = True
   NegInf <= _ = True
   _ <= NegInf = False
-instance (Zero a) => Zero (Convergence a) where
+instance Zero (ExtR) where
   zero = Finite zero
 
-type Conv n dat = Vector n (Convergence dat)
-type ConvRD n = Vector n (Convergence RealNum)
+type ConvRD n = Vector n ExtR
 instance Complete (ConvRD 1) where
-instance Complete (Convergence R1) where
 
 -------------- Sequence convergence ------------------
 -- Use vectors, because it's more general
@@ -82,8 +80,7 @@ instance Complete (Convergence R1) where
 -- "Converges to X" (maybe not unique)
 -- Definition of convergence (3.10)
 -- Definition of convergence to infinity (3.12)
-realConverges :: (Defined set RealNum)
-  => Sequence set RealNum -> Convergence RealNum -> Bool
+realConverges :: (Defined set RealNum) => Sequence set RealNum -> ExtR -> Bool
 realConverges seq limit = let naturals = Everything :: Naturals in
   forAll (Everything :: Positive RealNum) $ \test ->
     thereExists naturals $ \bigN ->
@@ -106,15 +103,8 @@ converges :: (KnownNat n, Defined set (RD n))
   => Sequence set (RD n) -> ConvRD n -> Bool
 converges seq limit = converges_ Proxy seq limit
 
--- In the special case where the convergence target is all finite (or infinite)
--- We can define convergence in terms of Convergence (RD n)
-toPoint_ :: KnownNat n => Proxy n -> Convergence (RD n) -> ConvRD n
-toPoint_ p (Finite v) = Vec $ map (\i -> Finite $ v @@ i) $ [0..(dim v - 1)]
-toPoint_ p PosInf = Vec $ repeat PosInf
-toPoint_ p NegInf = Vec $ repeat NegInf
-
-convRd :: KnownNat n => Convergence (RD n) -> ConvRD n
-convRd x = toPoint_ Proxy x
+convRd :: KnownNat n => RD n -> ConvRD n
+convRd x = Vec $ map Finite $ vecToList x
 
 -- Proposition 3.11 - Uniqueness of Convergence
 -- Analyze the convergence of this sequence of reals
@@ -133,9 +123,9 @@ seqTail seq n = fromJust $ box $ \m -> seq ← (m + n)
 -- lim sup/lim inf on a given dimension.
 -- There's a hidden requirement that "dat" needs to be "Complete", i.e.
 -- a supremum or infimum always exists.
-limDim_ :: (KnownNat n, Ord dat, Zero dat, Defined AllOf dat)
-  => Sequence AllOf (Conv n dat) -> Integer -> Bool
-  -> Sequence AllOf (Convergence dat)
+limDim_ :: (KnownNat n)
+  => Sequence AllOf (ConvRD n) -> Integer -> Bool
+  -> Sequence AllOf ExtR
 limDim_ vseq dim sup = fromJust $ box $
   \n -> fromJust $ extremum $ range $ seqTail seq (n - 1)
   where seq = pickFn dim <. vseq
@@ -198,12 +188,4 @@ approaches :: KnownNat n => ConvRD n -> Subset (Sequence AllOf (RD n))
 approaches target = everything % \seq ->
   seq `converges` target &&
   forAll (Everything :: Positive Integer) ( -- Remembber this part!
-    \n -> convRd (Finite (seq ← n)) /= target)
-
--- Filter to get only finite limits.
-onlyFinites
-  :: (Eq a, Defined set1 (Maybe (Convergence a)), Defined AllOf a) =>
-     set1 (Maybe (Convergence a)) -> Subset a
-onlyFinites subset = collapse $ smap change subset
-  where change (Just (Finite x)) = Just x
-        change _ = Nothing
+    \n -> convRd (seq ← n) /= target)
