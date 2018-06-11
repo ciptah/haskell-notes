@@ -6,10 +6,11 @@
 
 module Sequences (
   ExtR(..), ConvRD,
-  realConverges, converges, convRd, limit,
+  realConverges, converges, extend, extendFn, limit,
   subseq, convergentSubseq,
   foldOrdered, foldFinite, foldCountable,
-  approaches,
+  approaches, stripe,
+  limSup, limInf
 ) where
 
 import GHC.TypeLits
@@ -74,6 +75,25 @@ instance Zero (ExtR) where
 type ConvRD n = Vector n ExtR
 instance Complete (ConvRD 1) where
 
+-------------- Extend a vector into the extended real space ------------------
+
+extend :: KnownNat n => RD n -> ConvRD n
+extend x = Vec $ map Finite $ vecToList x
+
+extendFn :: (Defined set (RD n), KnownNat n) => Fn set (RD n) AllOf (ConvRD n)
+extendFn = fromJust $ box extend -- Guaranteed success
+
+-------------- Break apart a vector sequence. ------------------
+
+stripe_ :: (Zero dat, Defined AllOf dat, KnownNat n)
+  => Proxy n -> Sequence AllOf (Vector n dat) -> [Sequence AllOf dat]
+stripe_ proxy vseq =
+  map (\d -> pickFn d <. vseq) [0..(fromIntegral (natVal proxy) - 1)]
+
+stripe :: (Zero dat, Defined AllOf dat, KnownNat n)
+  => Sequence AllOf (Vector n dat) -> [Sequence AllOf dat]
+stripe vseq = stripe_ Proxy vseq
+
 -------------- Sequence convergence ------------------
 -- Use vectors, because it's more general
 
@@ -103,18 +123,12 @@ converges :: (KnownNat n, Defined set (RD n))
   => Sequence set (RD n) -> ConvRD n -> Bool
 converges seq limit = converges_ Proxy seq limit
 
-convRd :: KnownNat n => RD n -> ConvRD n
-convRd x = Vec $ map Finite $ vecToList x
-
--- Proposition 3.11 - Uniqueness of Convergence
--- Analyze the convergence of this sequence of reals
-limit :: (Defined set (RD n), KnownNat n) =>
-  Sequence set (RD n) -> Maybe (ConvRD n)
-limit seq = singleton $ everything % \x -> converges seq x
-
 -------------- Convergence (#2) ------------------
 
 -- Using lim sup and lim inf, and makes it work for Sequence set (ConvRD n)
+-- The intuition behind lim sup/lim inf is a "shrink wrap" on the sequence,
+-- that hides all the directional changes and makes the convergence
+-- easily visible.
 
 -- tail :: Sequence set a -> Integer -> Sequence set a
 seqTail :: (Eq b, Defined cod b) => Sequence cod b -> Integer -> Sequence cod b
@@ -123,13 +137,34 @@ seqTail seq n = fromJust $ box $ \m -> seq ← (m + n)
 -- lim sup/lim inf on a given dimension.
 -- There's a hidden requirement that "dat" needs to be "Complete", i.e.
 -- a supremum or infimum always exists.
-limDim_ :: (KnownNat n)
-  => Sequence AllOf (ConvRD n) -> Integer -> Bool
+seqDim_ :: String
   -> Sequence AllOf ExtR
-limDim_ vseq dim sup = fromJust $ box $
+  -> Sequence AllOf ExtR
+seqDim_ limType seq = fromJust $ box $
   \n -> fromJust $ extremum $ range $ seqTail seq (n - 1)
-  where seq = pickFn dim <. vseq
-        extremum = if sup then supremum else infimum
+  where extremum = if limType == "supremum" then supremum else infimum
+
+limitDim_ :: String -> Sequence AllOf ExtR -> ExtR
+limitDim_ limType seq =
+  -- lim sup will only decrease while lim inf will only increase.
+  -- The limit of the lim sup is the infimum of the range of the sequence.
+  if limType == "supremum"
+  then fromJust $ infimum $ range $ seqDim_ "supremum" seq
+  else fromJust $ supremum $ range $ seqDim_ "infimum" seq
+
+limSup :: KnownNat n => Sequence AllOf (Vector n ExtR) -> Vector n ExtR
+limSup vseq = Vec $ map (limitDim_ "supremum") $ stripe vseq
+
+limInf :: KnownNat n => Sequence AllOf (Vector n ExtR) -> Vector n ExtR
+limInf vseq = Vec $ map (limitDim_ "infimum") $ stripe vseq
+
+-- Proposition 3.11 - Uniqueness of Convergence
+-- Analyze the convergence of this sequence of reals
+limit :: (Defined set (RD n), KnownNat n) =>
+  Sequence set (RD n) -> Maybe (ConvRD n)
+limit seq = if (limSup vseq) == (limInf vseq)
+  then Just (limSup vseq) else Nothing
+  where vseq = extendFn <. seq
 
 -------------- Subsequences ------------------
 
@@ -188,4 +223,4 @@ approaches :: KnownNat n => ConvRD n -> Subset (Sequence AllOf (RD n))
 approaches target = everything % \seq ->
   seq `converges` target &&
   forAll (Everything :: Positive Integer) ( -- Remembber this part!
-    \n -> convRd (seq ← n) /= target)
+    \n -> extend (seq ← n) /= target)

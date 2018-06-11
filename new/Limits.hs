@@ -34,7 +34,7 @@ limitFn fn target | accumulation (domain fn) target =
     -- Only consider approaches within the domain of the function
     collapse $ smap (\seq -> box (f seq)) $
     -- Find all approaches to the target
-    approaches $ convRd $ Finite target
+    approaches $ extend $ target
   where coalesce Nothing = Nothing
         coalesce (Just x) = x
 
@@ -44,7 +44,7 @@ continuousAt
 continuousAt fn target
   | isolated (domain fn) target = True
   | accumulation (domain fn) target =
-    limitFn fn target == (Just $ convRd $ Finite $ fn ← target)
+    limitFn fn target == (Just $ extend $ fn ← target)
 
 -------------- Derivative/Differentiable ---------------------
 
@@ -79,7 +79,7 @@ limitDFN fn x dx = limitFn (safeBox $ derivativeFn_ fn x dx) zeroV
 gradient :: (KnownNat n, Defined dom (RD n), Defined cod R1)
   => Fn dom (RD n) cod R1 -> RD n -> Maybe (RD n)
 gradient fn x | interior (domain fn) x = singleton $ everything %
-  \dx -> limitDFN fn x dx == (Just $ convRd $ Finite $ toR1 0)
+  \dx -> limitDFN fn x dx == (Just $ extend $ toR1 0)
 
 -- Derivative is just gradient for R->R functions
 derivative :: (Defined dom R1, Defined cod R1)
