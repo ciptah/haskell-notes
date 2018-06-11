@@ -3,6 +3,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE UndecidableSuperClasses #-}
 
 -- https://www.math.ucdavis.edu/~hunter/intro_analysis_pdf/intro_analysis.pdf
 module Analysis(
@@ -12,13 +13,14 @@ module Analysis(
   supremumFn, infimumFn, mappers,
   equalCardinality, finite, countable,
   interior, neighborhood, isolated, boundary, accumulation,
-  toList
+  toList, sureSup, sureInf, Complete
 ) where
 
 import Sets
 import Functions
 import Vectors
 import GHC.TypeLits
+import Data.Maybe (fromJust)
 
 data Bound x = UpperBound x | LowerBound x
 isUpperBound (UpperBound _) = True
@@ -59,6 +61,15 @@ supremum set = singleton $ b % \x -> forAll b $ \y -> x <= y -- least upper boun
 infimum :: (Defined set x, Ord x) => set x -> Maybe x
 infimum set = singleton $ b % \x -> forAll b $ \y -> x >= y -- most lower bound
   where b = lowerBounds set
+
+class (Defined AllOf dat, Ord dat) => Complete dat where
+  sureSup :: (Defined set dat) => set dat -> dat
+  sureSup set = fromJust $ supremum set
+  sureInf :: (Defined set dat) => set dat -> dat
+  sureInf set = fromJust $ infimum set
+
+instance Complete RealNum where
+instance Complete (Vector 1 RealNum) where
 
 -------------- Bounds/maps of functions ------------------
 

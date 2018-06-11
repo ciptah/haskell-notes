@@ -5,7 +5,7 @@
 {-# LANGUAGE DataKinds #-}
 
 module Sequences (
-  Convergence(..), ConvRD,
+  Convergence(..), Conv, ConvRD,
   realConverges, converges, convRd, limit,
   subseq, convergentSubseq,
   foldOrdered, foldFinite, foldCountable,
@@ -71,7 +71,10 @@ instance (Ord a) => Ord (Convergence a) where
 instance (Zero a) => Zero (Convergence a) where
   zero = Finite zero
 
+type Conv n dat = Vector n (Convergence dat)
 type ConvRD n = Vector n (Convergence RealNum)
+instance Complete (ConvRD 1) where
+instance Complete (Convergence R1) where
 
 -------------- Sequence convergence ------------------
 -- Use vectors, because it's more general
@@ -118,6 +121,25 @@ convRd x = toPoint_ Proxy x
 limit :: (Defined set (RD n), KnownNat n) =>
   Sequence set (RD n) -> Maybe (ConvRD n)
 limit seq = singleton $ everything % \x -> converges seq x
+
+-------------- Convergence (#2) ------------------
+
+-- Using lim sup and lim inf, and makes it work for Sequence set (ConvRD n)
+
+-- tail :: Sequence set a -> Integer -> Sequence set a
+seqTail :: (Eq b, Defined cod b) => Sequence cod b -> Integer -> Sequence cod b
+seqTail seq n = fromJust $ box $ \m -> seq ← (m + n)
+
+-- lim sup/lim inf on a given dimension.
+-- There's a hidden requirement that "dat" needs to be "Complete", i.e.
+-- a supremum or infimum always exists.
+limDim_ :: (KnownNat n, Ord dat, Zero dat, Defined AllOf dat)
+  => Sequence AllOf (Conv n dat) -> Integer -> Bool
+  -> Sequence AllOf (Convergence dat)
+limDim_ vseq dim sup = fromJust $ box $
+  \n -> fromJust $ extremum $ range $ seqTail seq (n - 1)
+  where seq = pickFn dim <. vseq
+        extremum = if sup then supremum else infimum
 
 -------------- Subsequences ------------------
 
