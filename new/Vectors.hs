@@ -31,12 +31,6 @@ import Functions
 
 -------------- Basics ------------------
 
--- Things with a "Zero" element.
-class (Eq x, Num x, Ord x) => Zero x where zero :: x
-
-instance Zero RealNum where zero = 0.0
-instance Zero Integer where zero = 0
-
 -- To make the vector "well defined" for any n and [a],
 -- equality is determined by comparing lists up to n (and padding with 0)
 data Vector (n :: Nat) a = Vec [a]
@@ -82,6 +76,13 @@ instance (Zero a, Num a) => Num (Vector 1 a) where
   negate x = Vec [negate $ x @@ 0]
   signum x = Vec [signum $ x @@ 0]
   abs x = Vec [abs $ x @@ 0]
+
+instance (Zero a, Num a) => Zero (Vector 1 a) where
+  zero = Vec []
+
+instance (Zero a, Fractional a) => Fractional (Vector 1 a) where
+  fromRational x = Vec [fromRational x]
+  x1 / x2 = Vec [x1 @@ 0 / x2 @@ 0]
 
 -------------- Vector ops ------------------
 
@@ -201,11 +202,6 @@ data Segment v = Segment {
   pointA :: v,
   pointB :: v
 }
-
-instance Defined Positive R1 where
-  candidate _ v = v @@ 0 > 0
-instance Defined NonNegative R1 where
-  candidate _ v = v @@ 0 >= 0
 
 instance (KnownNat n) => Defined UnitBall (RD n) where
   candidate _ v = norm2 v <= 1.0

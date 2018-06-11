@@ -24,6 +24,7 @@ module Sets(
   Defined(candidate),
   AllOf,
   Subset,
+  Zero(..),
   everything,
   (%),
 
@@ -71,6 +72,12 @@ class (Defined AllOf contents) => Defined set contents where
   -- However, the element still has to satisfy (AllOf contents) before it can
   -- be said to be part of the set.
   candidate :: set contents -> contents -> Bool
+
+-- Things with a "Zero" element.
+class (Eq x, Num x, Ord x) => Zero x where zero :: x
+
+instance Zero RealNum where zero = 0.0
+instance Zero Integer where zero = 0
 
 -- To put a data type in a Set, need to define what "All" means.
 everything :: (Defined AllOf w) => AllOf w
@@ -271,16 +278,17 @@ type NonDecreasing = Set "NonDecreasing"
 instance Defined AllOf Bool where candidate set x = True
 
 instance Defined AllOf RealNum where candidate set x = True
-instance Defined Positive RealNum where candidate set x = x > 0 -- strictly
-instance Defined Negative RealNum where candidate set x = x < 0 -- strictly
-instance Defined NonNegative RealNum where candidate set x = x >= 0
 instance Defined ZeroOne RealNum where candidate set x = x >= 0 && x <= 1
 
 instance Defined AllOf Integer where candidate set x = True
-instance Defined Positive Integer where candidate set x = x > 0
-instance Defined Negative Integer where candidate set x = x < 0
-instance Defined NonNegative Integer where candidate set x = x >= 0
 instance Defined ZeroOne Integer where candidate set x = x >= 0 && x <= 1
+
+instance (Defined AllOf x, Zero x) => Defined Positive x where
+  candidate _ x = x > zero
+instance (Defined AllOf x, Zero x) => Defined Negative x where
+  candidate _ x = x > zero
+instance (Defined AllOf x, Zero x) => Defined NonNegative x where
+  candidate _ x = x >= zero
 
 type Time = NonNegative RealNum
 type Naturals = Positive Integer

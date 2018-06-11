@@ -85,7 +85,7 @@ safeBox f = Fn f (everything % \x -> halts f x && valid (f x)) everything
 
 preimage :: (Defined dom a, Defined cod b, Defined set b)
   => Fn dom a cod b -> set b -> Subset a
-preimage fn target = everything % \x -> fn ← x ∈ target
+preimage fn target = domain fn % \x -> fn ← x ∈ target
 
 -- Same of above but only for a single value.
 preimageOf :: (Defined dom a, Defined cod b, Eq b)
