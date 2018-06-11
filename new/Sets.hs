@@ -203,6 +203,8 @@ set1 === set2 = set1 `setEquals` set2
 infix 4 =/=
 set1 =/= set2 = not $ set1 === set2
 
+-- DON'T DO THIS, NON-TERMINATING
+-- instance Defined set w => Eq (set w) where
 instance Defined AllOf w => Eq (Subset w) where
   s1 == s2 = s1 === s2
 
@@ -233,7 +235,7 @@ mask :: (Defined set w) => set w -> Subset w
 mask set = set % \x -> True
 
 -- isEmpty isn't necessary. Just compare with empty
--- The empty set is disjoint with itself [wikipedia].
+-- The empty set is disjoint with itself, that's intentional [wikipedia].
 a `isSubsetOf` b = a === (a ∩ b)
 x `isDisjoint` y = x ∩ y === empty
 infix 4 ⊆ -- u2286

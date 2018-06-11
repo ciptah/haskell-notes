@@ -24,13 +24,13 @@ import GHC.TypeLits
 -- Proposition 6.3. The limit of a function is unique if it exists
 limitFn :: (Defined dom (RD n), Defined cod (RD m),
             KnownNat n, KnownNat m) =>
-  Fn dom (RD n) cod (RD m) -> RD n -> Maybe (ConvRD m)
+  Fn dom (RD n) cod (RD m) -> RD n -> Maybe (ExtRD m)
 limitFn fn target | accumulation (domain fn) target =
   coalesce $ singleton $
     -- Apply the function to the approaches, and analyze convergence. Do not
     -- collapse the Maybe because if "Nothing" exists that indicates some path
     -- with undefined convergence, which changes the answer!
-    smap limit $ smap (fn <.) $
+    smap lim $ smap (extendFn <.) $ smap (fn <.) $
     -- Only consider approaches within the domain of the function
     collapse $ smap (\seq -> box (f seq)) $
     -- Find all approaches to the target
@@ -72,7 +72,7 @@ derivativeFn_ fn x dx h =
 
 -- Given dx, compute the limit of the above function as h -> 0
 limitDFN :: (KnownNat n, Defined dom (RD n), Defined cod R1)
-  => Fn dom (RD n) cod R1 -> RD n -> RD n -> Maybe (ConvRD 1)
+  => Fn dom (RD n) cod R1 -> RD n -> RD n -> Maybe ExtR1
 limitDFN fn x dx = limitFn (safeBox $ derivativeFn_ fn x dx) zeroV
 
 -- The gradient is the vector that can push the limitDFN to 0.

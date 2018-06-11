@@ -9,8 +9,6 @@ module Integral (
   partition,
   intersectWith,
   partitionSequence,
-  Measure,
-  measure, (←←)
 ) where
 
 import Sets
@@ -20,6 +18,7 @@ import Sequences
 import Limits
 import Vectors
 import SigmaAlgebra
+import Measures
 
 import Data.Maybe (fromJust)
 
@@ -46,34 +45,6 @@ intersectWith cod partition = filter (=/= empty) $ map (∩ cod) partition
 partitionSequence :: Sequence AllOf [Subset R1]
 partitionSequence = fromJust $ box $ partition
 
--------------- Measures ------------------
-
-data Measure set w = Measure {
-  algebra :: SigmaAlgebra set w,
-  -- Technically this isn't correct; fn can go all the way to +inf;
-  -- but the Sequences code isn't up to that task yet.
-  -- Just imagine the function explodes or something
-  fn :: Fn Subset (Subset w) NonNegative R1
-}
-
-measure alg fn = let candidate = Measure alg fn in
-  if valid candidate then Just candidate else Nothing
-
-instance Defined set w => Defined AllOf (Measure set w) where
-  candidate _ m =
-    -- Non-negativity is implied by the Fn codomain
-    -- Function and algebra need to agree on what is measurable.
-    (domain . fn) m == (events . algebra) m &&
-    -- Null empty set
-    fn m ← empty == zero &&
-    -- Countable additivity
-    (forAll disjoints $ \sets ->
-      (fn m ← unionAll sets) == (sum $ map (f $ fn m) sets))
-    where disjoints = (star $ events $ algebra m) % isPairwiseDisjoint
-
-infixr 9 ←← -- u2190
-m ←← x = fn m ← x
-
 -------------- The Lebesgue Integral Sequence (Positive) ------------------
 
 -- References:
@@ -86,10 +57,10 @@ lebTerm_ :: Defined dom a
   -> Fn dom a NonNegative R1 -- The function to integrate
   -> Subset a -- The subset we are integrating over
   -> Subset R1 -- The range of values of the function of this sum term
-  -> R1 -- The result
+  -> ExtR1 -- The result
 lebTerm_ m fn x y = yterm * pterm
-  where yterm = fromJust $ infimum y :: R1
-        pterm = m ←← (x ∩ (preimage fn y) ) :: R1
+  where yterm = extend $ fromJust $ infimum y :: ExtR1
+        pterm = m ←← (x ∩ (preimage fn y) ) :: ExtR1
 
 -- Given a list of partitions, compute the infinite sum
 lebSum_ :: Defined dom a
@@ -97,7 +68,7 @@ lebSum_ :: Defined dom a
   -> Fn dom a NonNegative R1
   -> Subset a
   -> [Subset R1]
-  -> R1
+  -> ExtR1
 lebSum_ m fn x ys = sum $ map (lebTerm_ m fn x) ys
 
 -- Given a sequence of ever finer partitions,
@@ -107,18 +78,17 @@ lebSeq_ :: Defined dom a
   -> Fn dom a NonNegative R1
   -> Subset a
   -> Sequence AllOf [Subset R1]
-  -> Maybe (Sequence AllOf R1)
+  -> Maybe (Sequence AllOf ExtR1)
 lebSeq_ m fn x seq = pure (<.) <*> boxSum <*> pure seq
-  where boxSum = box $ lebSum_ m fn x
-    -- :: Maybe (Fn AllOf [Subset R1] AllOf (ConvRD 1) )
+  where boxSum = box $ lebSum_ m fn x :: Maybe (Fn AllOf [Subset R1] AllOf ExtR1)
 
 -- Lebesgue integral of non-negative functions.
 lebesgueP :: Defined dom a
   => Measure dom a
   -> Fn dom a NonNegative R1
   -> Subset a
-  -> Maybe (ConvRD 1)
-lebesgueP m fn x = coalesce $ (pure limit <*> lebSeq_ m fn x partitions)
+  -> Maybe ExtR1
+lebesgueP m fn x = coalesce $ (pure lim <*> lebSeq_ m fn x partitions)
   where partitions = (intersectWith (range fn)) <<. partitionSequence
         coalesce Nothing = Nothing
         coalesce (Just Nothing) = Nothing

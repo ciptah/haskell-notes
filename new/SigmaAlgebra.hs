@@ -72,6 +72,8 @@ borelRd :: (KnownNat n) => SigmaAlgebra AllOf (RD n)
 borelRd = fromJust $ generate everything (everything % open)
   -- Everything #1 is every real. Everything #2 is every subset.
   where open = \set -> forAll set (interior set) -- Open set = all pts are itr
+  -- Not the same as sets that can be made with countable open balls.
+  -- https://math.stackexchange.com/questions/1142867/in-mathbbrn-forall-b-borel-set-there-exists-an-disjoint-countable-op
 
 --------------- Filtrations ------------------
 

@@ -5,12 +5,13 @@
 {-# LANGUAGE DataKinds #-}
 
 module Sequences (
-  ExtR(..), ConvRD,
-  realConverges, converges, extend, extendFn, limit,
+  ExtR(..), ExtRD, ExtR1,
+  realConverges, converges, extend, extendFn, lim,
   subseq, convergentSubseq,
   foldOrdered, foldFinite, foldCountable,
-  approaches, stripe,
-  limSup, limInf
+  approaches, stripe, seqTail,
+  limSup, limInf,
+  series, sumSeq, unionSeq
 ) where
 
 import GHC.TypeLits
@@ -72,26 +73,27 @@ instance Ord (ExtR) where
 instance Zero (ExtR) where
   zero = Finite zero
 
-type ConvRD n = Vector n ExtR
-instance Complete (ConvRD 1) where
+type ExtRD n = Vector n ExtR
+type ExtR1 = ExtRD 1
+instance Complete (ExtRD 1) where
 
 -------------- Extend a vector into the extended real space ------------------
 
-extend :: KnownNat n => RD n -> ConvRD n
+extend :: KnownNat n => RD n -> ExtRD n
 extend x = Vec $ map Finite $ vecToList x
 
-extendFn :: (Defined set (RD n), KnownNat n) => Fn set (RD n) AllOf (ConvRD n)
+extendFn :: (Defined set (RD n), KnownNat n) => Fn set (RD n) AllOf (ExtRD n)
 extendFn = fromJust $ box extend -- Guaranteed success
 
 -------------- Break apart a vector sequence. ------------------
 
-stripe_ :: (Zero dat, Defined AllOf dat, KnownNat n)
-  => Proxy n -> Sequence AllOf (Vector n dat) -> [Sequence AllOf dat]
+stripe_ :: (Zero dat, Defined set (Vector n dat), Defined AllOf dat, KnownNat n)
+  => Proxy n -> Sequence set (Vector n dat) -> [Sequence AllOf dat]
 stripe_ proxy vseq =
   map (\d -> pickFn d <. vseq) [0..(fromIntegral (natVal proxy) - 1)]
 
-stripe :: (Zero dat, Defined AllOf dat, KnownNat n)
-  => Sequence AllOf (Vector n dat) -> [Sequence AllOf dat]
+stripe :: (Zero dat, Defined set (Vector n dat), Defined AllOf dat, KnownNat n)
+  => Sequence set (Vector n dat) -> [Sequence AllOf dat]
 stripe vseq = stripe_ Proxy vseq
 
 -------------- Sequence convergence ------------------
@@ -114,37 +116,37 @@ realConverges seq limit = let naturals = Everything :: Naturals in
 -- Convergence of Rd -> either pointwise or norm convergence
 -- We can use pointwise
 converges_ :: (KnownNat n, Defined set (RD n))
-  => Proxy n -> Sequence set (RD n) -> ConvRD n -> Bool
+  => Proxy n -> Sequence set (RD n) -> ExtRD n -> Bool
 converges_ d seq limit = let dim = natVal d in
   and $ [con i seq (limit @@ i) | i <- [0..(dim-1)] ]
   where con i seq lim = realConverges (pickFn i <. seq) lim
 
 converges :: (KnownNat n, Defined set (RD n))
-  => Sequence set (RD n) -> ConvRD n -> Bool
+  => Sequence set (RD n) -> ExtRD n -> Bool
 converges seq limit = converges_ Proxy seq limit
 
 -------------- Convergence (#2) ------------------
 
--- Using lim sup and lim inf, and makes it work for Sequence set (ConvRD n)
+-- Using lim sup and lim inf, and makes it work for Sequence set (ExtRD n)
 -- The intuition behind lim sup/lim inf is a "shrink wrap" on the sequence,
 -- that hides all the directional changes and makes the convergence
 -- easily visible.
 
 -- tail :: Sequence set a -> Integer -> Sequence set a
+-- n = how many entries to skip
 seqTail :: (Eq b, Defined cod b) => Sequence cod b -> Integer -> Sequence cod b
 seqTail seq n = fromJust $ box $ \m -> seq ← (m + n)
 
 -- lim sup/lim inf on a given dimension.
 -- There's a hidden requirement that "dat" needs to be "Complete", i.e.
 -- a supremum or infimum always exists.
-seqDim_ :: String
-  -> Sequence AllOf ExtR
-  -> Sequence AllOf ExtR
+seqDim_ :: Defined set ExtR
+  => String -> Sequence set ExtR -> Sequence AllOf ExtR
 seqDim_ limType seq = fromJust $ box $
   \n -> fromJust $ extremum $ range $ seqTail seq (n - 1)
   where extremum = if limType == "supremum" then supremum else infimum
 
-limitDim_ :: String -> Sequence AllOf ExtR -> ExtR
+limitDim_ :: Defined set ExtR => String -> Sequence set ExtR -> ExtR
 limitDim_ limType seq =
   -- lim sup will only decrease while lim inf will only increase.
   -- The limit of the lim sup is the infimum of the range of the sequence.
@@ -152,19 +154,19 @@ limitDim_ limType seq =
   then fromJust $ infimum $ range $ seqDim_ "supremum" seq
   else fromJust $ supremum $ range $ seqDim_ "infimum" seq
 
-limSup :: KnownNat n => Sequence AllOf (Vector n ExtR) -> Vector n ExtR
+limSup :: (Defined set (ExtRD n), KnownNat n)
+  => Sequence set (ExtRD n) -> Vector n ExtR
 limSup vseq = Vec $ map (limitDim_ "supremum") $ stripe vseq
 
-limInf :: KnownNat n => Sequence AllOf (Vector n ExtR) -> Vector n ExtR
+limInf :: (Defined set (ExtRD n), KnownNat n)
+  => Sequence set (ExtRD n) -> Vector n ExtR
 limInf vseq = Vec $ map (limitDim_ "infimum") $ stripe vseq
 
--- Proposition 3.11 - Uniqueness of Convergence
--- Analyze the convergence of this sequence of reals
-limit :: (Defined set (RD n), KnownNat n) =>
-  Sequence set (RD n) -> Maybe (ConvRD n)
-limit seq = if (limSup vseq) == (limInf vseq)
+-- Recommended
+lim :: (Defined set (ExtRD n), KnownNat n) =>
+  Sequence set (ExtRD n) -> Maybe (ExtRD n)
+lim vseq = if (limSup vseq) == (limInf vseq)
   then Just (limSup vseq) else Nothing
-  where vseq = extendFn <. seq
 
 -------------- Subsequences ------------------
 
@@ -181,7 +183,7 @@ seqa `subseq` seqb = thereExists
 -- for bounded sequences
 convergentSubseq :: (KnownNat n, Defined set (RD n))
   => Sequence set (RD n) -> Subset (Sequence set (RD n))
-convergentSubseq seq = everything % \s -> s `subseq` seq && (isJust $ limit s)
+convergentSubseq seq = everything % \s -> s `subseq` seq && (isJust $ lim $ extendFn <. s)
 
 -- Every bounded sequence has a convergent subsequence.
 bolzanoWeierstrassClaim = forAll
@@ -219,8 +221,25 @@ foldCountable fn zero set | countable set = collapse $
 -------------- Sequences that converge at a point ------------------
 -- Useful for defining limits, which defines derivatives/integrals
 
-approaches :: KnownNat n => ConvRD n -> Subset (Sequence AllOf (RD n))
+approaches :: KnownNat n => ExtRD n -> Subset (Sequence AllOf (RD n))
 approaches target = everything % \seq ->
   seq `converges` target &&
   forAll (Everything :: Positive Integer) ( -- Remembber this part!
     \n -> extend (seq ← n) /= target)
+
+-------------- Series / Summation /Union of sequences ------------------
+
+series :: (Eq b, Num b, Defined cod b) => Sequence cod b -> Sequence AllOf b
+series seq = fromJust $ box $ \n -> sum $ map (f seq) [1..n]
+
+-- Sum of a sequence of vectors.
+-- Since the output is ExtRD, and the sequence we're limiting is the series
+-- (which is always nondecreasing), this will always generate a value
+-- (which may be infinite)
+sumSeq :: (KnownNat n, Num (ExtRD n), Defined cod (ExtRD n)) =>
+  Sequence cod (ExtRD n) -> ExtRD n
+sumSeq seq = fromJust $ lim $ series seq
+
+unionSeq :: (Eq (set w), Defined set w, Defined cod (set w))
+  => Sequence cod (set w) -> Subset w
+unionSeq seq = seq ← 1 ∪ unionSeq (seqTail seq 1)
