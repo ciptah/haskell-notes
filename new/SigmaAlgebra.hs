@@ -10,7 +10,8 @@ module SigmaAlgebra (
   borelRd,
 
   TimeIndexedSA,
-  filtrations, isFiltration
+  filtrations, isFiltration,
+  measurable
 ) where
 
 import Data.Maybe
@@ -96,3 +97,14 @@ filtrations = Everything
 
 isFiltration :: (Eq w, Defined set w) => TimeIndexedSA set w -> Bool
 isFiltration fsa = fsa ∈ filtrations
+
+--------------- Function Measurability ------------------
+
+-- Is defined from two sigma-algebras.
+-- Definition 3.1. Let (X, A) and (Y, B) be measurable spaces.
+-- A function f : X → Y is measurable if inv.f (B) ∈ A for every B ∈ B.
+
+measurable :: (Defined dom a, Defined cod b, Eq b)
+  => SigmaAlgebra dom a -> SigmaAlgebra cod b -> Fn dom a cod b -> Bool
+measurable dom cod fn =
+  forAll (events cod) $ \results -> dom `canMeasure` preimage fn results

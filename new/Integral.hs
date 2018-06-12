@@ -9,6 +9,9 @@ module Integral (
   partition,
   intersectWith,
   partitionSequence,
+  lebP,
+  split,
+  integral
 ) where
 
 import Sets
@@ -45,7 +48,7 @@ intersectWith cod partition = filter (=/= empty) $ map (∩ cod) partition
 partitionSequence :: Sequence AllOf [Subset R1]
 partitionSequence = fromJust $ box $ partition
 
--------------- The Lebesgue Integral Sequence (Positive) ------------------
+-------------- The Lebesgue Integral (Positive) ------------------
 
 -- References:
 -- https://en.wikipedia.org/wiki/Measure_(mathematics)
@@ -60,7 +63,7 @@ lebTerm_ :: Defined dom a
   -> ExtR1 -- The result
 lebTerm_ m fn x y = yterm * pterm
   where yterm = extend $ fromJust $ infimum y :: ExtR1
-        pterm = m ←← (x ∩ (preimage fn y) ) :: ExtR1
+        pterm = volume m $ x ∩ (preimage fn y) :: ExtR1
 
 -- Given a list of partitions, compute the infinite sum
 lebSum_ :: Defined dom a
@@ -83,14 +86,30 @@ lebSeq_ m fn x seq = pure (<.) <*> boxSum <*> pure seq
   where boxSum = box $ lebSum_ m fn x :: Maybe (Fn AllOf [Subset R1] AllOf ExtR1)
 
 -- Lebesgue integral of non-negative functions.
-lebesgueP :: Defined dom a
+lebP :: Defined dom a
   => Measure dom a
   -> Fn dom a NonNegative R1
   -> Subset a
   -> Maybe ExtR1
-lebesgueP m fn x = coalesce $ (pure lim <*> lebSeq_ m fn x partitions)
+lebP m fn x = coalesce $ (pure lim <*> lebSeq_ m fn x partitions)
   where partitions = (intersectWith (range fn)) <<. partitionSequence
         coalesce Nothing = Nothing
         coalesce (Just Nothing) = Nothing
         coalesce (Just (Just x)) = Just x
 
+-------------- The Lebesgue Integral (All Functions) ------------------
+
+-- Split a function into Non-Negative parts.
+split :: Defined dom a => Fn dom a AllOf R1
+  -> (Fn dom a NonNegative R1, Fn dom a NonNegative R1)
+split fn = (posFn, negFn)
+  where
+    stuff = fromJust . box
+    posFn = stuff $ \x -> if fn ← x > zero then fn ← x else zero
+    negFn = stuff $ \x -> if fn ← x < zero then negate $ fn ← x else zero
+
+-- int fn(.) dM over x
+integral :: Defined dom a
+  => Measure dom a -> Fn dom a AllOf R1 -> Subset a -> Maybe ExtR1
+integral m fn x = if x ∈ (events . algebra) m then diff $ split fn else Nothing
+  where diff (posFn, negFn) = pure (-) <*> lebP m posFn x <*> lebP m negFn x
