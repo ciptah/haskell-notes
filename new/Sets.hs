@@ -230,7 +230,6 @@ smap :: (Defined set1 a, Defined AllOf b, Eq b) =>
 smap fn set = everything % \y -> thereExists set $ \x -> fn x == y
 
 -- Cartesian product.
--- TODO: move to analysis
 cartesian :: (Defined set1 w1, Defined set2 w2) => 
   set1 w1 -> set2 w2 -> Subset (w1, w2)
 cartesian setA setB = everything % \(w1, w2) -> w1 ∈ setA && w2 ∈ setB

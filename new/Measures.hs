@@ -138,14 +138,19 @@ right_ set = smap (\(a, b) -> b) set
 
 productMeasure :: (Eq a, Eq b, Defined dom1 a, Defined dom2 b) =>
   Measure dom1 a -> Measure dom2 b -> Maybe (Measure Subset (a, b))
-productMeasure m1 m2 | isJust productSa && isJust productFn =
-  measure (fromJust productSa) (fromJust productFn)
+productMeasure m1 m2 | valid m1 && valid m2 =
+  measure
+    (mustHave "If m1, m2 valid, this must succeed" productSa)
+    (mustHave "If m1, m2 valid, thsi must succeed" productFn)
                      | otherwise = Nothing
   where productFn = box $ \event -> fn m1 ← left_ event * fn m2 ← right_ event
-        productSa = sigmaAlgebra productOut productEv
+        productSa = generate productOut productEv
         productEv = everything % \event ->
-          -- The event is measurably only when it can be formed by taking
-          -- the cartesian product of two events.
+          -- The event is measurable only when it can be formed by taking
+          -- the cartesian product of two events. NOT the same as events that
+          -- can be "separated" to events in the respective measures using
+          -- left_ or right_. That has MORE events than the cartesian product
+          -- sigma-algebra.
           thereExists (events $ algebra $ m1) $ \ev1 ->
           thereExists (events $ algebra $ m2) $ \ev2 ->
             event === cartesian ev1 ev2
