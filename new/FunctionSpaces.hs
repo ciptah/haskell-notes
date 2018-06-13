@@ -34,10 +34,6 @@ import SigmaAlgebra
 import Measures
 import Integral
 
-justFinite :: Maybe ExtR1 -> Bool
-justFinite (Just v) = v @@ 0 /= PosInf && v @@ 0 /= NegInf
-justFinite _ = False
-
 pow_ :: RealNum -> R1 -> R1
 pow_ p x = Vec [(x @@ 0) ** p]
 

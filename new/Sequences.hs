@@ -5,7 +5,7 @@
 {-# LANGUAGE DataKinds #-}
 
 module Sequences (
-  ExtR(..), ExtRD, ExtR1,
+  ExtR(..), ExtRD, ExtR1, justFinite,
   realConverges, converges, extend, extendFn, lim,
   subseq, convergentSubseq,
   foldOrdered, foldFinite, foldCountable,
@@ -76,6 +76,10 @@ instance Zero (ExtR) where
 type ExtRD n = Vector n ExtR
 type ExtR1 = ExtRD 1
 instance Complete (ExtRD 1) where
+
+justFinite :: Maybe ExtR1 -> Bool
+justFinite (Just v) = v @@ 0 /= PosInf && v @@ 0 /= NegInf
+justFinite _ = False
 
 -------------- Extend a vector into the extended real space ------------------
 
