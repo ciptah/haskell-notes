@@ -11,7 +11,9 @@ module Measures (
   volume, covers, outerMeasure, outerMeasureFn,
   caraMeasurable,
   lebesgueRd,
-  lebesgueMeasure
+  lebesgueMeasure,
+  sigmaFinite,
+  productMeasure
 ) where
 
 import Sets
