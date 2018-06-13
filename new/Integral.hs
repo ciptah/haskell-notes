@@ -23,8 +23,6 @@ import Vectors
 import SigmaAlgebra
 import Measures
 
-import Data.Maybe (fromJust)
-
 -------------- Partitioning ------------------
 
 -- First, define a partitioning of the positive real line by taking evenly
@@ -46,7 +44,7 @@ intersectWith cod partition = filter (=/= empty) $ map (∩ cod) partition
 -- Now define a sequence of ever-finer partitions of R+.
 -- These partitions are countable, so we should define them as a sequence.
 partitionSequence :: Sequence AllOf [Subset R1]
-partitionSequence = fromJust $ box $ partition
+partitionSequence = mustHave "Partition works for all i >= 0" $ box $ partition
 
 -------------- The Lebesgue Integral (Positive) ------------------
 
@@ -62,7 +60,7 @@ lebTerm_ :: Defined dom a
   -> Subset R1 -- The range of values of the function of this sum term
   -> ExtR1 -- The result
 lebTerm_ m fn x y = yterm * pterm
-  where yterm = extend $ fromJust $ infimum y :: ExtR1
+  where yterm = extend $ mustHave "y = finite interval" $ infimum y :: ExtR1
         pterm = volume m $ x ∩ (preimage fn y) :: ExtR1
 
 -- Given a list of partitions, compute the infinite sum
@@ -104,7 +102,7 @@ split :: Defined dom a => Fn dom a AllOf R1
   -> (Fn dom a NonNegative R1, Fn dom a NonNegative R1)
 split fn = (posFn, negFn)
   where
-    stuff = fromJust . box
+    stuff = mustHave "defined for all x, y >= 0" . box
     posFn = stuff $ \x -> if fn ← x > zero then fn ← x else zero
     negFn = stuff $ \x -> if fn ← x < zero then negate $ fn ← x else zero
 

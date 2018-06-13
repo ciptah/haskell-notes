@@ -39,6 +39,8 @@ module Sets(
   (∪), (∩), -- u222a, u2229
   power, countableUnions, isPairwiseDisjoint, collapse,
 
+  mustHave,
+
   RealNum,
   Positive,
   Negative,
@@ -179,6 +181,9 @@ thereExists set predicate = error "***** MAGIC *****"
 -- "there exists" oracle.
 singleton :: (Defined set w) => set w -> Maybe w
 singleton set = error "***** MAGIC *****"
+
+mustHave :: String -> Maybe w -> w
+mustHave justification set = error "***** MAGIC *****"
 
 -------------- Ops that need magic ------------------
 

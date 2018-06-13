@@ -20,7 +20,6 @@ import Sets
 import Functions
 import Vectors
 import GHC.TypeLits
-import Data.Maybe (fromJust)
 
 data Bound x = UpperBound x | LowerBound x
 isUpperBound (UpperBound _) = True
@@ -64,9 +63,9 @@ infimum set = singleton $ b % \x -> forAll b $ \y -> x >= y -- most lower bound
 
 class (Defined AllOf dat, Ord dat) => Complete dat where
   sureSup :: (Defined set dat) => set dat -> dat
-  sureSup set = fromJust $ supremum set
+  sureSup set = mustHave "As defined by class" $ supremum set
   sureInf :: (Defined set dat) => set dat -> dat
-  sureInf set = fromJust $ infimum set
+  sureInf set = mustHave "As defined by class" $ infimum set
 
 instance Complete RealNum where
 instance Complete (Vector 1 RealNum) where

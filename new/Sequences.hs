@@ -16,7 +16,7 @@ module Sequences (
 
 import GHC.TypeLits
 import Data.Proxy
-import Data.Maybe (isJust, fromJust)
+import Data.Maybe (isJust)
 
 import Sets
 import Analysis
@@ -83,7 +83,7 @@ extend :: KnownNat n => RD n -> ExtRD n
 extend x = Vec $ map Finite $ vecToList x
 
 extendFn :: (Defined set (RD n), KnownNat n) => Fn set (RD n) AllOf (ExtRD n)
-extendFn = fromJust $ box extend -- Guaranteed success
+extendFn = mustHave "ExtRD contains RD" $ box extend -- Guaranteed success
 
 -------------- Break apart a vector sequence. ------------------
 
@@ -135,15 +135,14 @@ converges seq limit = converges_ Proxy seq limit
 -- tail :: Sequence set a -> Integer -> Sequence set a
 -- n = how many entries to skip
 seqTail :: (Eq b, Defined cod b) => Sequence cod b -> Integer -> Sequence cod b
-seqTail seq n = fromJust $ box $ \m -> seq ← (m + n)
+seqTail seq n = mustHave "Only changing the index" $ box $ \m -> seq ← (m + n)
 
 -- lim sup/lim inf on a given dimension.
--- There's a hidden requirement that "dat" needs to be "Complete", i.e.
 -- a supremum or infimum always exists.
 seqDim_ :: Defined set ExtR
   => String -> Sequence set ExtR -> Sequence AllOf ExtR
-seqDim_ limType seq = fromJust $ box $
-  \n -> fromJust $ extremum $ range $ seqTail seq (n - 1)
+seqDim_ limType seq = mustHave "Section 3.6: Always exists" $ box $
+  \n -> mustHave "lim sup/inf" $ extremum $ range $ seqTail seq (n - 1)
   where extremum = if limType == "supremum" then supremum else infimum
 
 limitDim_ :: Defined set ExtR => String -> Sequence set ExtR -> ExtR
@@ -151,8 +150,8 @@ limitDim_ limType seq =
   -- lim sup will only decrease while lim inf will only increase.
   -- The limit of the lim sup is the infimum of the range of the sequence.
   if limType == "supremum"
-  then fromJust $ infimum $ range $ seqDim_ "supremum" seq
-  else fromJust $ supremum $ range $ seqDim_ "infimum" seq
+  then mustHave "lim sup must exist" $ infimum $ range $ seqDim_ "supremum" seq
+  else mustHave "lim inf must exist" $ supremum $ range $ seqDim_ "infimum" seq
 
 limSup :: (Defined set (ExtRD n), KnownNat n)
   => Sequence set (ExtRD n) -> Vector n ExtR
@@ -230,7 +229,8 @@ approaches target = everything % \seq ->
 -------------- Series / Summation /Union of sequences ------------------
 
 series :: (Eq b, Num b, Defined cod b) => Sequence cod b -> Sequence AllOf b
-series seq = fromJust $ box $ \n -> sum $ map (f seq) [1..n]
+series seq = mustHave "summation of fine Num terms must succeed" $
+  box $ \n -> sum $ map (f seq) [1..n]
 
 -- Sum of a sequence of vectors.
 -- Since the output is ExtRD, and the sequence we're limiting is the series
@@ -238,7 +238,7 @@ series seq = fromJust $ box $ \n -> sum $ map (f seq) [1..n]
 -- (which may be infinite)
 sumSeq :: (KnownNat n, Num (ExtRD n), Defined cod (ExtRD n)) =>
   Sequence cod (ExtRD n) -> ExtRD n
-sumSeq seq = fromJust $ lim $ series seq
+sumSeq seq = mustHave "see comment above" $ lim $ series seq
 
 unionSeq :: (Eq (set w), Defined set w, Defined cod (set w))
   => Sequence cod (set w) -> Subset w
