@@ -23,7 +23,7 @@ import Vectors
 import SigmaAlgebra
 import Measures
 
--------------- Partitioning ------------------
+-------------- Partitioning (Simple) ------------------
 
 -- First, define a partitioning of the positive real line by taking evenly
 -- sized intervals of the given size.
@@ -45,6 +45,10 @@ intersectWith cod partition = filter (=/= empty) $ map (∩ cod) partition
 -- These partitions are countable, so we should define them as a sequence.
 partitionSequence :: Sequence AllOf [Subset R1]
 partitionSequence = mustHave "Partition works for all i >= 0" $ box $ partition
+
+-------------- Partitioning (General) ------------------
+
+-- TODO: Non-fixed-size partitions, with a bounded maximum size
 
 -------------- The Lebesgue Integral (Positive) ------------------
 
@@ -109,5 +113,7 @@ split fn = (posFn, negFn)
 -- int fn(.) dM over x
 integral :: Defined dom a
   => Measure dom a -> Fn dom a AllOf R1 -> Subset a -> Maybe ExtR1
-integral m fn x = if x ∈ (events . algebra) m then diff $ split fn else Nothing
+integral m fn x | measurable (algebra m) lebesgueRd fn  =
+  if x ∈ (events . algebra) m then diff $ split fn else Nothing
   where diff (posFn, negFn) = pure (-) <*> lebP m posFn x <*> lebP m negFn x
+integral m fn x | otherwise = Nothing

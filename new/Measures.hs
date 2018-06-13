@@ -35,8 +35,9 @@ data Measure set w = Measure {
 measure alg fn = let candidate = Measure alg fn in
   if valid candidate then Just candidate else Nothing
 
-instance Defined set w => Defined AllOf (Measure set w) where
+instance (Eq w, Defined set w) => Defined AllOf (Measure set w) where
   candidate _ m =
+    valid (algebra m) && valid (fn m) &&
     -- Non-negativity is implied by the Fn codomain
     (events . algebra) m ⊆ (domain . fn) m &&
     -- Null empty set

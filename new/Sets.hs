@@ -78,6 +78,10 @@ class (Defined AllOf contents) => Defined set contents where
 -- Things with a "Zero" element.
 class (Eq x, Num x, Ord x) => Zero x where zero :: x
 
+-- Things that can be turned into a set.
+class AsASet set contents where
+  asSet :: set -> Subset contents
+
 instance Zero RealNum where zero = 0.0
 instance Zero Integer where zero = 0
 
