@@ -157,10 +157,8 @@ productMeasure m1 m2
   | valid m1 && valid m2 && sigmaFinite m1 && sigmaFinite m2 =
   -- The existence of this measure is guaranteed by the Hahn–Kolmogorov
   -- theorem. The uniqueness of product measure is guaranteed only in the case
-  -- that both {\displaystyle (X_{1},\Sigma _{1},\mu _{1})} (X_{1},\Sigma
-  -- _{1},\mu _{1}) and {\displaystyle (X_{2},\Sigma _{2},\mu _{2})}
-  -- (X_{2},\Sigma _{2},\mu _{2}) are σ-finite
-  Just $ mustHave "H-K theorem" $ measure
+  -- that both measures are sigma-finite [Wikipedia]
+  Just $ mustHave "Hahn-Kolmogorov theorem" $ measure
     (mustHave "If m1, m2 valid, this must succeed" productSa)
     (mustHave "If m1, m2 valid, thsi must succeed" productFn)
   | otherwise = Nothing
