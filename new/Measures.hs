@@ -128,6 +128,21 @@ lebesgueMeasure = fromJust $ measure lebesgueRd outerMeasureFn
 borelMeasure :: KnownNat n => Measure AllOf (RD n)
 borelMeasure = fromJust $ measure borelRd outerMeasureFn
 
+-------------- Sigma-finiteness ------------------
+
+subsetSequences :: Defined dom a =>
+  Measure dom a -> Subset (Sequence Subset (Subset a))
+subsetSequences m = everything %
+  -- All sets in this countable set of subsets is measurable.
+  \subsetSeq -> range subsetSeq ⊆ (events . algebra) m
+
+sigmaFinite :: Defined dom a => Measure dom a -> Bool
+sigmaFinite m = thereExists (subsetSequences m) $ \subsetSeq ->
+  -- All subsets in this countable unions have finite measure
+  Vec [PosInf] ∉ (range $ volume m <<. subsetSeq) &&
+  -- But, the union of all these sets is the total space.
+  unionSeq subsetSeq === (outcomes . algebra) m
+
 -------------- Product Measure ------------------
 
 left_ :: (Eq a, Eq b, Defined AllOf a, Defined AllOf b) => Subset (a, b) -> Subset a
@@ -138,11 +153,17 @@ right_ set = smap (\(a, b) -> b) set
 
 productMeasure :: (Eq a, Eq b, Defined dom1 a, Defined dom2 b) =>
   Measure dom1 a -> Measure dom2 b -> Maybe (Measure Subset (a, b))
-productMeasure m1 m2 | valid m1 && valid m2 =
-  measure
+productMeasure m1 m2
+  | valid m1 && valid m2 && sigmaFinite m1 && sigmaFinite m2 =
+  -- The existence of this measure is guaranteed by the Hahn–Kolmogorov
+  -- theorem. The uniqueness of product measure is guaranteed only in the case
+  -- that both {\displaystyle (X_{1},\Sigma _{1},\mu _{1})} (X_{1},\Sigma
+  -- _{1},\mu _{1}) and {\displaystyle (X_{2},\Sigma _{2},\mu _{2})}
+  -- (X_{2},\Sigma _{2},\mu _{2}) are σ-finite
+  Just $ mustHave "H-K theorem" $ measure
     (mustHave "If m1, m2 valid, this must succeed" productSa)
     (mustHave "If m1, m2 valid, thsi must succeed" productFn)
-                     | otherwise = Nothing
+  | otherwise = Nothing
   where productFn = box $ \event -> fn m1 ← left_ event * fn m2 ← right_ event
         productSa = generate productOut productEv
         productEv = everything % \event ->
