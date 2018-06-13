@@ -10,3 +10,9 @@ The value of using Haskell is that the code can be type-checked, which may
 point out any inconsistency/misunderstanding that I have by failing to compile.
 
 I make no claim for the accuracy of any code I write here.
+
+TODO:
+
+1. Variation
+1. Probability
+1. Itô Calculus
