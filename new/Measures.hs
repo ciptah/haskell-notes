@@ -22,7 +22,7 @@ import Limits
 import Vectors
 import SigmaAlgebra
 
-import Data.Maybe (fromJust)
+import Data.Maybe (isJust, fromJust)
 import GHC.TypeLits
 
 -------------- Measures ------------------
@@ -127,4 +127,29 @@ lebesgueMeasure = fromJust $ measure lebesgueRd outerMeasureFn
 -- Since borel is part of lebesgue this is always valid.
 borelMeasure :: KnownNat n => Measure AllOf (RD n)
 borelMeasure = fromJust $ measure borelRd outerMeasureFn
+
+-------------- Product Measure ------------------
+
+left_ :: (Eq a, Eq b, Defined AllOf a, Defined AllOf b) => Subset (a, b) -> Subset a
+left_ set = smap (\(a, b) -> a) set
+
+right_ :: (Eq a, Eq b, Defined AllOf a, Defined AllOf b) => Subset (a, b) -> Subset b
+right_ set = smap (\(a, b) -> b) set
+
+productMeasure :: (Eq a, Eq b, Defined dom1 a, Defined dom2 b) =>
+  Measure dom1 a -> Measure dom2 b -> Maybe (Measure Subset (a, b))
+productMeasure m1 m2 | isJust productSa && isJust productFn =
+  measure (fromJust productSa) (fromJust productFn)
+                     | otherwise = Nothing
+  where productFn = box $ \event -> fn m1 ← left_ event * fn m2 ← right_ event
+        productSa = sigmaAlgebra productOut productEv
+        productEv = everything % \event ->
+          -- The event is measurably only when it can be formed by taking
+          -- the cartesian product of two events.
+          thereExists (events $ algebra $ m1) $ \ev1 ->
+          thereExists (events $ algebra $ m2) $ \ev2 ->
+            event === cartesian ev1 ev2
+        productOut =
+          cartesian (outcomes $ algebra $ m1) (outcomes $ algebra $ m2)
+
 

@@ -120,6 +120,9 @@ instance (Defined AllOf r, Eq r) => Defined AllOf (Maybe r) where
   candidate _ (Just x) = valid x
   candidate _ Nothing = True
 
+instance (Defined AllOf a, Defined AllOf b) => Defined AllOf (a, b) where
+  candidate _ (a, b) = valid a && valid b
+
 -------------- Membership ------------------
 
 infix 4 ∈  -- Unicode hex 2208
@@ -228,14 +231,9 @@ smap fn set = everything % \y -> thereExists set $ \x -> fn x == y
 
 -- Cartesian product.
 -- TODO: move to analysis
-cartesian ::
-  (Eq w3,
-   Defined set1 w1,
-   Defined set2 w2,
-   Defined AllOf w3) =>
-  (w1 -> w2 -> w3) -> set1 w1 -> set2 w2 -> Subset w3
-cartesian fn setA setB = everything % \w ->
-  thereExists setA $ \x -> thereExists setB $ \y -> fn x y == w
+cartesian :: (Defined set1 w1, Defined set2 w2) => 
+  set1 w1 -> set2 w2 -> Subset (w1, w2)
+cartesian setA setB = everything % \(w1, w2) -> w1 ∈ setA && w2 ∈ setB
 
 -------------- Subset operators ---------------------
 

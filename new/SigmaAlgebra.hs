@@ -5,7 +5,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 module SigmaAlgebra (
-  SigmaAlgebra(outcomes, events),
+  SigmaAlgebra(outcomes, events), sigmaAlgebra,
   canMeasure, subOf, generate,
   borelRd,
 
@@ -28,6 +28,9 @@ data SigmaAlgebra set w = SigmaAlgebra {
   outcomes :: set w,
   events :: Subset (Subset w)
 }
+
+sigmaAlgebra out ev = let candidate = SigmaAlgebra out ev in
+  if valid candidate then Just candidate else Nothing
 
 -- Define the validity of all sigma-algebra constructions.
 -- The SA must be self-consistent.
