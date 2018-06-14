@@ -10,6 +10,9 @@
 {-# LANGUAGE Rank2Types #-}
 
 module FunctionSpaces (
+  pow,
+  root,
+
   lpNorm,
   lp2Norm,
   lpSpace,
@@ -34,15 +37,15 @@ import SigmaAlgebra
 import Measures
 import Integral
 
-pow_ :: RealNum -> R1 -> R1
-pow_ p x = Vec [(x @@ 0) ** p]
+pow :: RealNum -> R1 -> R1
+pow p x = Vec [(x @@ 0) ** p]
 
-root_ :: RealNum -> Maybe ExtR1 -> Maybe ExtR1
-root_ p (Just v) = root__ $ vecToList v
+root :: RealNum -> Maybe ExtR1 -> Maybe ExtR1
+root p (Just v) = root__ $ vecToList v
   where root__ [PosInf] = Just $ Vec [PosInf]
         root__ [Finite x] = Just $ Vec [Finite $ x ** (1/p)]
         root__ _ = Nothing
-root_ p _ = Nothing
+root p _ = Nothing
 
 -- The literature mentions "measurable functions" but doesn't define what
 -- the sigma-algebra of the codomain is. I'll just take it as the Lebesgue
@@ -52,17 +55,21 @@ root_ p _ = Nothing
 -- and the exponent-value p. We don't actually need a type.
 
 -- Only for p >= 1. Infinity norm is special that will come later.
-lpNorm :: Defined dom a =>
+lpNorm_ :: Defined dom a =>
   RealNum -> Measure dom a -> Fn dom a AllOf R1 -> Maybe ExtR1
-lpNorm p measure fn = if p >= 1 then root else Nothing
+lpNorm_ p measure fn = if p >= 1 then root_ else Nothing
   where all = (outcomes $ algebra $ measure) % \w -> True
-        pfn = pow_ p <<. abs <<. fn
-        root = root_ p $ integral measure pfn all
+        pfn = pow p <<. abs <<. fn
+        root_ = root p $ integral measure pfn all
+
+lpNorm :: Defined dom a =>
+  ExtR -> Measure dom a -> Fn dom a AllOf R1 -> Maybe ExtR1
+lpNorm (Finite x) measure fn = lpNorm_ x measure fn
 
 lpSpace :: Defined dom a =>
   ExtR -> Measure dom a -> Subset (Fn dom a AllOf R1)
 lpSpace (Finite p) measure = everything % \fn ->
-  justFinite $ lpNorm p measure fn
+  justFinite $ lpNorm_ p measure fn
 
 lp2Norm :: Defined dom a => Measure dom a -> Fn dom a AllOf R1 -> Maybe ExtR1
 lp2Norm = lpNorm 2
@@ -94,7 +101,7 @@ fnMul f1 f2 = mustHave "multiplication is well defined" $ box $ \x -> f1 ← x *
 
 -- A sequence of functions in some Lp-space
 data LpFnSequence dom a = LpFnSeq {
-  measure :: Measure dom a,
+  measureSpace :: Measure dom a,
   index :: Sequence Subset (Fn dom a AllOf R1),
   p :: ExtR
 }
@@ -109,4 +116,18 @@ instance (Eq a, Defined dom a) => Defined AllOf (LpFnSequence dom a) where
 
 lpFnSequence measure index p = let candidate = LpFnSeq measure index p in
   if valid candidate then Just candidate else Nothing
+
+-- This is convergence in mean
+-- https://en.wikipedia.org/wiki/Complete_measure
+convergesToFn :: (Defined dom a, Eq a) =>
+  LpFnSequence dom a -> Fn dom a AllOf R1 -> Bool
+convergesToFn seq limit | limit ∈ lpSpace (p seq) (measureSpace seq) =
+  (lim $ (diff limit) <<. index seq) == Just zero
+  where diff f1 f2 = mustHave "already checked" $ lpNorm (p seq) (measureSpace seq) $ fnSub f1 f2
+
+-- Find the limit of the sequence of functions
+limitingFn :: (Defined dom a, Eq a) =>
+  LpFnSequence dom a -> Maybe (Fn dom a AllOf R1)
+limitingFn seq = singleton $ space % \fn -> convergesToFn seq fn
+  where space = lpSpace (p seq) (measureSpace seq)
 

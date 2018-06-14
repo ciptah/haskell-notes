@@ -6,9 +6,13 @@
 -- Defining the Lebesgue Integral.
 module Integral (
   interval,
-  partition,
+  partition, Partition,
   intersectWith,
   partitionSequence,
+
+  halfOpens, mesh, intervals, integralPaths,
+  finiteMeshPartitions,
+  
   lebP,
   split,
   integral
@@ -77,14 +81,17 @@ intervals maxSize = everything % \partition -> let sets = range partition in
   -- Sets start at 0.
   (forAll sets $ \s -> (mustHave "reals are complete" $ infimum s) >= zero)
 
+-- Any partition of finite intervals.
+finiteMeshPartitions = everything % \partition ->
+    (thereExists (Everything :: Positive R1) $ \m -> partition ∈ intervals m)
+
 -- Now we can define approaches to the infinitesimally small partitions.
 -- Any sequence of partitions with finite mesh, the limit of which goes to 0.
 -- We can also check for monotonically decreasing mesh sequence but not required.
 integralPaths :: Subset (Sequence AllOf Partition)
 integralPaths = everything % \seq ->
   -- Partition must be one of the intervals for some finite mesh size m.
-  (forAll (range seq) $ \partition ->
-    (thereExists (Everything :: Positive R1) $ \m -> partition ∈ intervals m)) &&
+  (forAll (range seq) $ \partition -> partition ∈ finiteMeshPartitions) &&
   lim (meshSequence seq) == (Just $ zero)
   where meshSequence seq = justMesh <<. seq
         justMesh = \part -> mustHave "already checked finiteMesh" $ mesh part

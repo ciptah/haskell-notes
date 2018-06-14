@@ -19,7 +19,7 @@ module Vectors (
   project,
   zeroV,
 
-  R1, toR1, R2, RD, UnitBall, Direction, OpenBall(..)
+  R1, toR1, R2, RD, UnitBall, Direction, OpenBall(..), Segment(..)
 ) where
 
 import GHC.TypeLits
@@ -198,6 +198,7 @@ data OpenBall v = OpenBall {
   radius :: RealNum
 }
 
+-- Points between two endpoints, inclusive
 data Segment v = Segment {
   pointA :: v,
   pointB :: v
