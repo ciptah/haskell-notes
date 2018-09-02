@@ -9,6 +9,8 @@ module Probability (
   allProbabilitySpaces,
   asProbabilitySpace,
   probability,
+  conditionalProbability,
+  independent
 ) where
 
 import Sets
