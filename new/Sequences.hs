@@ -113,9 +113,9 @@ realConverges seq limit = let naturals = Everything :: Naturals in
       forAll (naturals % \n -> n > bigN) $ \n ->
         satisfy limit n test
   -- $1: type of convergence, $2: test sequence index, $3: test value
-  where satisfy (Finite x) n test = (abs $ (seq ← n) - x) < test
-        satisfy PosInf n test = (seq ← n) > test
-        satisfy NegInf n test = (seq ← n) < -test
+  where satisfy (Finite x) n test = (abs $ (seq ⬅ n) - x) < test
+        satisfy PosInf n test = (seq ⬅ n) > test
+        satisfy NegInf n test = (seq ⬅ n) < -test
 
 -- Convergence of Rd -> either pointwise or norm convergence
 -- We can use pointwise
@@ -139,7 +139,7 @@ converges seq limit = converges_ Proxy seq limit
 -- tail :: Sequence set a -> Integer -> Sequence set a
 -- n = how many entries to skip
 seqTail :: (Eq b, Defined cod b) => Sequence cod b -> Integer -> Sequence cod b
-seqTail seq n = mustHave "Only changing the index" $ box $ \m -> seq ← (m + n)
+seqTail seq n = mustHave "Only changing the index" $ box $ \m -> seq ⬅ (m + n)
 
 -- lim sup/lim inf on a given dimension.
 -- a supremum or infimum always exists.
@@ -177,7 +177,7 @@ lim vseq = if (limSup vseq) == (limInf vseq)
 subseq :: (Defined set a, Eq a) => Sequence set a -> Sequence set a -> Bool
 seqa `subseq` seqb = thereExists
   (Everything :: Increasing (Sequence Positive Integer)) $ \map ->
-    forAll (Everything :: Positive Integer) $ \n -> seqa ← n == seqb ← map ← n
+    forAll (Everything :: Positive Integer) $ \n -> seqa ⬅ n == seqb ⬅ map ⬅ n
 
 -- Bolzano-Weierstrass
 -- The theorem does not claim any result about unbounded sequences (it could
@@ -228,7 +228,7 @@ approaches :: KnownNat n => ExtRD n -> Subset (Sequence AllOf (RD n))
 approaches target = everything % \seq ->
   seq `converges` target &&
   forAll (Everything :: Positive Integer) ( -- Remembber this part!
-    \n -> extend (seq ← n) /= target)
+    \n -> extend (seq ⬅ n) /= target)
 
 -------------- Series / Summation /Union of sequences ------------------
 
@@ -246,4 +246,4 @@ sumSeq seq = mustHave "see comment above" $ lim $ series seq
 
 unionSeq :: (Eq (set w), Defined set w, Defined cod (set w))
   => Sequence cod (set w) -> Subset w
-unionSeq seq = seq ← 1 ∪ unionSeq (seqTail seq 1)
+unionSeq seq = seq ⬅ 1 ∪ unionSeq (seqTail seq 1)

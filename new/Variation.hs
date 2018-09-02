@@ -24,7 +24,7 @@ import Sequences
 
 variationTerm_ :: RealNum -> Fn AllOf R1 AllOf R1 -> Segment R1 -> Subset R1 -> ExtR1
 variationTerm_ p fn over interval =
-  extend $ pow p $ (fn ← end) - (fn ← start)
+  extend $ pow p $ (fn ⬅ end) - (fn ⬅ start)
   where end = mustHave "well-def." $ supremum $ interval ∩ over
         start = mustHave "well-def." $ infimum $ interval ∩ over
 

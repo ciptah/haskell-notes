@@ -81,15 +81,15 @@ lp2Space = lpSpace (Finite 2)
 
 fnAdd :: Defined dom a =>
   Fn dom a AllOf R1 -> Fn dom a AllOf R1 -> Fn dom a AllOf R1
-fnAdd f1 f2 = mustHave "addition is well defined" $ box $ \x -> f1 ← x + f2 ← x
+fnAdd f1 f2 = mustHave "addition is well defined" $ box $ \x -> f1 ⬅ x + f2 ⬅ x
 
 fnSub :: Defined dom a =>
   Fn dom a AllOf R1 -> Fn dom a AllOf R1 -> Fn dom a AllOf R1
-fnSub f1 f2 = mustHave "subtraction is well defined" $ box $ \x -> f1 ← x - f2 ← x
+fnSub f1 f2 = mustHave "subtraction is well defined" $ box $ \x -> f1 ⬅ x - f2 ⬅ x
 
 fnMul :: Defined dom a =>
   Fn dom a AllOf R1 -> Fn dom a AllOf R1 -> Fn dom a AllOf R1
-fnMul f1 f2 = mustHave "multiplication is well defined" $ box $ \x -> f1 ← x * f2 ← x
+fnMul f1 f2 = mustHave "multiplication is well defined" $ box $ \x -> f1 ⬅ x * f2 ⬅ x
 
 -------------- Convergence of a sequence of functions in an Lp-space ------------------
 

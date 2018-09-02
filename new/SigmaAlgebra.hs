@@ -91,7 +91,7 @@ instance (Defined set w, Eq w) => Defined Filtration (TimeIndexedSA set w) where
   candidate _ filt =
     forAll time $ \t1 ->
       forAll (time % (t1 <)) $ \t2 ->
-        (filt ← t1) `subOf` (filt ← t2)
+        (filt ⬅ t1) `subOf` (filt ⬅ t2)
     where time = Everything :: NonNegative R1
 
 -- Get me all possible filtrations of the outcome set.

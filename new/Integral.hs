@@ -168,8 +168,8 @@ split :: Defined dom a => Fn dom a AllOf R1
 split fn = (posFn, negFn)
   where
     stuff = mustHave "defined for all x, y >= 0" . box
-    posFn = stuff $ \x -> if fn ← x > zero then fn ← x else zero
-    negFn = stuff $ \x -> if fn ← x < zero then negate $ fn ← x else zero
+    posFn = stuff $ \x -> if fn ⬅ x > zero then fn ⬅ x else zero
+    negFn = stuff $ \x -> if fn ⬅ x < zero then negate $ fn ⬅ x else zero
 
 -- int fn(.) dM over x
 integral :: Defined dom a

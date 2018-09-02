@@ -6,7 +6,7 @@ module Functions(
   Fn,
   domain,
   codomain,
-  f, (←),
+  f, (⬅), -- u2b05
   fnEquals,
   clip, box, safeBox,
   preimage, preimageOf, range,onto, one2one, bijective,
@@ -31,15 +31,15 @@ codomain (Fn _ _ cod) = cod
 f :: (Defined dom a, Defined cod b) => Fn dom a cod b -> a -> b
 f (Fn fn dom cod) x | x ∈ dom && (fn x) ∈ cod = fn x
 
-infixr 9 ← -- u2190
-fn ← x = f fn x
+infixr 9 ⬅ -- u2b05
+fn ⬅ x = f fn x
 
 -------------- Instantiations ------------------
 
 -- Validation for functions.
 instance (Defined dom a, Defined cod b) => Defined AllOf (Fn dom a cod b) where
   candidate _ fn = -- Validate domain, codomain and f agree on function
-    forAll (domain fn) $ \x -> fn ← x ∈ codomain fn
+    forAll (domain fn) $ \x -> fn ⬅ x ∈ codomain fn
 
 -- Generalized equals works when functions have different representations
 -- for domain and codomain, i.e. (Everything :: AllOf RealNum) === Subset True
@@ -85,7 +85,7 @@ safeBox f = Fn f (everything % \x -> halts f x && valid (f x)) everything
 
 preimage :: (Defined dom a, Defined cod b, Defined set b)
   => Fn dom a cod b -> set b -> Subset a
-preimage fn target = domain fn % \x -> fn ← x ∈ target
+preimage fn target = domain fn % \x -> fn ⬅ x ∈ target
 
 -- Same of above but only for a single value.
 preimageOf :: (Defined dom a, Defined cod b, Eq b)

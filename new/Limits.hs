@@ -44,7 +44,7 @@ continuousAt
 continuousAt fn target
   | isolated (domain fn) target = True
   | accumulation (domain fn) target =
-    limitFn fn target == (Just $ extend $ fn ← target)
+    limitFn fn target == (Just $ extend $ fn ⬅ target)
 
 -------------- Derivative/Differentiable ---------------------
 
@@ -68,7 +68,7 @@ directions p = Everything
 derivativeFn_ :: (KnownNat n, Defined dom (RD n), Defined cod R1)
   => Fn dom (RD n) cod R1 -> RD n -> RD n -> RD n -> R1
 derivativeFn_ fn x dx h =
-  Vec [norm2 (fn ← (x |+| h) - fn ← x - Vec [dx |.| h]) /  norm2 h]
+  Vec [norm2 (fn ⬅ (x |+| h) - fn ⬅ x - Vec [dx |.| h]) /  norm2 h]
 
 -- Given dx, compute the limit of the above function as h -> 0
 limitDFN :: (KnownNat n, Defined dom (RD n), Defined cod R1)

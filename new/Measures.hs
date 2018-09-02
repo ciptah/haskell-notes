@@ -45,15 +45,15 @@ instance (Eq w, Defined set w) => Defined AllOf (Measure set w) where
     -- Non-negativity is implied by the Fn codomain
     (events . algebra) m ⊆ (domain . fn) m &&
     -- Null empty set
-    fn m ← empty == zero &&
+    fn m ⬅ empty == zero &&
     -- Countable additivity
     (forAll disjoints $ \sets ->
-      (fn m ← unionAll sets) == (sum $ map (f $ fn m) sets))
+      (fn m ⬅ unionAll sets) == (sum $ map (f $ fn m) sets))
     where disjoints = (star $ events $ algebra m) % isPairwiseDisjoint
 
 -- Apply the measure on a set.
 volume :: Defined set1 w => Measure set w -> set1 w -> ExtR1
-volume m x | (algebra m) `canMeasure` ex = fn m ← ex
+volume m x | (algebra m) `canMeasure` ex = fn m ⬅ ex
   where ex = mask x
 
 -------------- Lebesgue Outer Measure ------------------
@@ -169,7 +169,7 @@ productMeasure m1 m2
     (mustHave "If m1, m2 valid, this must succeed" productSa)
     (mustHave "If m1, m2 valid, thsi must succeed" productFn)
   | otherwise = Nothing
-  where productFn = box $ \event -> fn m1 ← left_ event * fn m2 ← right_ event
+  where productFn = box $ \event -> fn m1 ⬅ left_ event * fn m2 ⬅ right_ event
         productSa = generate productOut productEv
         productEv = everything % \event ->
           -- The event is measurable only when it can be formed by taking
