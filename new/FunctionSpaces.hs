@@ -9,42 +9,41 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE Rank2Types #-}
 
-module FunctionSpaces (
-  pow,
-  root,
+module FunctionSpaces
+  ( pow
+  , root
+  , lpNorm
+  , lp2Norm
+  , lpSpace
+  , lp2Space
+  , fnAdd
+  , fnSub
+  , fnMul
+  , LpFnSequence
+  , lpFnSequence
+  )
+where
 
-  lpNorm,
-  lp2Norm,
-  lpSpace,
-  lp2Space,
+import           GHC.TypeLits
+import           Data.Proxy
 
-  fnAdd,
-  fnSub,
-  fnMul,
-
-  LpFnSequence,
-  lpFnSequence
-) where
-
-import GHC.TypeLits
-import Data.Proxy
-
-import Sets
-import Functions
-import Sequences
-import Vectors
-import SigmaAlgebra
-import Measures
-import Integral
+import           Sets
+import           Functions
+import           Sequences
+import           Vectors
+import           SigmaAlgebra
+import           Measures
+import           Integral
 
 pow :: RealNum -> R1 -> R1
 pow p x = Vec [(x @@ 0) ** p]
 
 root :: RealNum -> Maybe ExtR1 -> Maybe ExtR1
 root p (Just v) = root__ $ vecToList v
-  where root__ [PosInf] = Just $ Vec [PosInf]
-        root__ [Finite x] = Just $ Vec [Finite $ x ** (1/p)]
-        root__ _ = Nothing
+ where
+  root__ [PosInf  ] = Just $ Vec [PosInf]
+  root__ [Finite x] = Just $ Vec [Finite $ x ** (1 / p)]
+  root__ _          = Nothing
 root p _ = Nothing
 
 -- The literature mentions "measurable functions" but doesn't define what
@@ -55,21 +54,25 @@ root p _ = Nothing
 -- and the exponent-value p. We don't actually need a type.
 
 -- Only for p >= 1. Infinity norm is special that will come later.
-lpNorm_ :: Defined dom a =>
-  RealNum -> Measure dom a -> Fn dom a AllOf R1 -> Maybe ExtR1
+lpNorm_
+  :: Defined dom a
+  => RealNum
+  -> Measure dom a
+  -> Fn dom a AllOf R1
+  -> Maybe ExtR1
 lpNorm_ p measure fn = if p >= 1 then root_ else Nothing
-  where all = (outcomes $ algebra $ measure) % \w -> True
-        pfn = pow p <<. abs <<. fn
-        root_ = root p $ integral measure pfn all
+ where
+  all   = (outcomes $ algebra $ measure) % \w -> True
+  pfn   = pow p <<. abs <<. fn
+  root_ = root p $ integral measure pfn all
 
-lpNorm :: Defined dom a =>
-  ExtR -> Measure dom a -> Fn dom a AllOf R1 -> Maybe ExtR1
+lpNorm
+  :: Defined dom a => ExtR -> Measure dom a -> Fn dom a AllOf R1 -> Maybe ExtR1
 lpNorm (Finite x) measure fn = lpNorm_ x measure fn
 
-lpSpace :: Defined dom a =>
-  ExtR -> Measure dom a -> Subset (Fn dom a AllOf R1)
-lpSpace (Finite p) measure = everything % \fn ->
-  justFinite $ lpNorm_ p measure fn
+lpSpace :: Defined dom a => ExtR -> Measure dom a -> Subset (Fn dom a AllOf R1)
+lpSpace (Finite p) measure =
+  everything % \fn -> justFinite $ lpNorm_ p measure fn
 
 lp2Norm :: Defined dom a => Measure dom a -> Fn dom a AllOf R1 -> Maybe ExtR1
 lp2Norm = lpNorm 2
@@ -79,17 +82,28 @@ lp2Space = lpSpace (Finite 2)
 
 -------------- Operations of functions as infinite dimensional vectors ------------------
 
-fnAdd :: Defined dom a =>
-  Fn dom a AllOf R1 -> Fn dom a AllOf R1 -> Fn dom a AllOf R1
+fnAdd
+  :: Defined dom a
+  => Fn dom a AllOf R1
+  -> Fn dom a AllOf R1
+  -> Fn dom a AllOf R1
 fnAdd f1 f2 = mustHave "addition is well defined" $ box $ \x -> f1 ⬅ x + f2 ⬅ x
 
-fnSub :: Defined dom a =>
-  Fn dom a AllOf R1 -> Fn dom a AllOf R1 -> Fn dom a AllOf R1
-fnSub f1 f2 = mustHave "subtraction is well defined" $ box $ \x -> f1 ⬅ x - f2 ⬅ x
+fnSub
+  :: Defined dom a
+  => Fn dom a AllOf R1
+  -> Fn dom a AllOf R1
+  -> Fn dom a AllOf R1
+fnSub f1 f2 =
+  mustHave "subtraction is well defined" $ box $ \x -> f1 ⬅ x - f2 ⬅ x
 
-fnMul :: Defined dom a =>
-  Fn dom a AllOf R1 -> Fn dom a AllOf R1 -> Fn dom a AllOf R1
-fnMul f1 f2 = mustHave "multiplication is well defined" $ box $ \x -> f1 ⬅ x * f2 ⬅ x
+fnMul
+  :: Defined dom a
+  => Fn dom a AllOf R1
+  -> Fn dom a AllOf R1
+  -> Fn dom a AllOf R1
+fnMul f1 f2 =
+  mustHave "multiplication is well defined" $ box $ \x -> f1 ⬅ x * f2 ⬅ x
 
 -------------- Convergence of a sequence of functions in an Lp-space ------------------
 
@@ -114,20 +128,23 @@ instance (Eq a, Defined dom a) => Defined AllOf (LpFnSequence dom a) where
     -- They should stay within the Lp-space
     (forAll (range index) $ \fn -> fn ∈ lpSpace p measure)
 
-lpFnSequence measure index p = let candidate = LpFnSeq measure index p in
-  if valid candidate then Just candidate else Nothing
+lpFnSequence measure index p =
+  let candidate = LpFnSeq measure index p
+  in  if valid candidate then Just candidate else Nothing
 
 -- This is convergence in mean
 -- https://en.wikipedia.org/wiki/Complete_measure
-convergesToFn :: (Defined dom a, Eq a) =>
-  LpFnSequence dom a -> Fn dom a AllOf R1 -> Bool
+convergesToFn
+  :: (Defined dom a, Eq a) => LpFnSequence dom a -> Fn dom a AllOf R1 -> Bool
 convergesToFn seq limit | limit ∈ lpSpace (p seq) (measureSpace seq) =
   (lim $ (diff limit) <<. index seq) == Just zero
-  where diff f1 f2 = mustHave "already checked" $ lpNorm (p seq) (measureSpace seq) $ fnSub f1 f2
+ where
+  diff f1 f2 =
+    mustHave "already checked" $ lpNorm (p seq) (measureSpace seq) $ fnSub f1 f2
 
 -- Find the limit of the sequence of functions
-limitingFn :: (Defined dom a, Eq a) =>
-  LpFnSequence dom a -> Maybe (Fn dom a AllOf R1)
+limitingFn
+  :: (Defined dom a, Eq a) => LpFnSequence dom a -> Maybe (Fn dom a AllOf R1)
 limitingFn seq = singleton $ space % \fn -> convergesToFn seq fn
   where space = lpSpace (p seq) (measureSpace seq)
 

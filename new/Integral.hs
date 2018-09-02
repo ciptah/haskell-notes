@@ -4,28 +4,31 @@
 {-# LANGUAGE DataKinds #-}
 
 -- Defining the Lebesgue Integral.
-module Integral (
-  interval,
-  partition, Partition,
-  intersectWith,
-  partitionSequence,
+module Integral
+  ( interval
+  , partition
+  , Partition
+  , intersectWith
+  , partitionSequence
+  , halfOpens
+  , mesh
+  , intervals
+  , integralPaths
+  , finiteMeshPartitions
+  , lebP
+  , split
+  , integral
+  )
+where
 
-  halfOpens, mesh, intervals, integralPaths,
-  finiteMeshPartitions,
-  
-  lebP,
-  split,
-  integral
-) where
-
-import Sets
-import Functions
-import Analysis
-import Sequences
-import Limits
-import Vectors
-import SigmaAlgebra
-import Measures
+import           Sets
+import           Functions
+import           Analysis
+import           Sequences
+import           Limits
+import           Vectors
+import           SigmaAlgebra
+import           Measures
 
 -------------- Partitioning (Simple) ------------------
 
@@ -33,13 +36,13 @@ import Measures
 -- sized intervals of the given size.
 
 interval :: Integer -> R1 -> Subset R1
-interval begin size = everything % \x -> let n = fromInteger begin in
-  x >= n * size && x < (n + Vec [1.0]) * size
+interval begin size = everything % \x ->
+  let n = fromInteger begin in x >= n * size && x < (n + Vec [1.0]) * size
 
 -- Partitions are countable.
 partition :: Integer -> [Subset R1]
-partition divisions = let sz = 1.0 / fromInteger divisions in
-  map (\i -> interval i sz) [0..]
+partition divisions =
+  let sz = 1.0 / fromInteger divisions in map (\i -> interval i sz) [0 ..]
 
 -- Intersect this partitioning with the codomain
 intersectWith :: Defined set R1 => set R1 -> [Subset R1] -> [Subset R1]
@@ -68,22 +71,31 @@ mesh partition = supremum $ range $ (fn lebesgueMeasure) <. partition
 -- define 0 < t1 < t2 < t3 < t4 < ...
 -- The sequence doesn't have to be ordered.
 intervals :: R1 -> Subset Partition
-intervals maxSize = everything % \partition -> let sets = range partition in
-  -- All partitions are disjoint.
-  (forAll sets $ \s1 ->
-    forAll (sets `minus` singletonOf s1) $ \s2 -> s1 `isDisjoint` s2) &&
-  -- All partitions are half-open intervals.
-  (forAll sets $ \s -> s ∈ halfOpens) &&
-  -- All partitions combine into the original set.
-  unionSeq partition === everything &&
-  -- The largest partition size is the (finite) mesh.
-  mesh partition == (Just $ extend maxSize) &&
-  -- Sets start at 0.
-  (forAll sets $ \s -> (mustHave "reals are complete" $ infimum s) >= zero)
+intervals maxSize = everything % \partition ->
+  let sets = range partition
+  in
+-- All partitions are disjoint.
+    (forAll sets $ \s1 ->
+      forAll (sets `minus` singletonOf s1) $ \s2 -> s1 `isDisjoint` s2
+    )
+    &&
+-- All partitions are half-open intervals.
+        (forAll sets $ \s -> s ∈ halfOpens)
+    &&
+-- All partitions combine into the original set.
+        unionSeq partition
+    === everything
+    &&
+-- The largest partition size is the (finite) mesh.
+        mesh partition
+    ==  (Just $ extend maxSize)
+    &&
+-- Sets start at 0.
+       (forAll sets $ \s -> (mustHave "reals are complete" $ infimum s) >= zero)
 
 -- Any partition of finite intervals.
 finiteMeshPartitions = everything % \partition ->
-    (thereExists (Everything :: Positive R1) $ \m -> partition ∈ intervals m)
+  (thereExists (Everything :: Positive R1) $ \m -> partition ∈ intervals m)
 
 -- Now we can define approaches to the infinitesimally small partitions.
 -- Any sequence of partitions with finite mesh, the limit of which goes to 0.
@@ -91,10 +103,12 @@ finiteMeshPartitions = everything % \partition ->
 integralPaths :: Subset (Sequence AllOf Partition)
 integralPaths = everything % \seq ->
   -- Partition must be one of the intervals for some finite mesh size m.
-  (forAll (range seq) $ \partition -> partition ∈ finiteMeshPartitions) &&
-  lim (meshSequence seq) == (Just $ zero)
-  where meshSequence seq = justMesh <<. seq
-        justMesh = \part -> mustHave "already checked finiteMesh" $ mesh part
+  (forAll (range seq) $ \partition -> partition ∈ finiteMeshPartitions)
+    && lim (meshSequence seq)
+    == (Just $ zero)
+ where
+  meshSequence seq = justMesh <<. seq
+  justMesh = \part -> mustHave "already checked finiteMesh" $ mesh part
 
 
 -------------- The Lebesgue Integral (Positive) ------------------
@@ -104,18 +118,21 @@ integralPaths = everything % \seq ->
 -- Shruve: https://www.springer.com/us/book/9780387401010
 
 -- For one interval, compute the summation term
-lebTerm_ :: Defined dom a
+lebTerm_
+  :: Defined dom a
   => Measure dom a -- How to measure subsets of the domain
   -> Fn dom a NonNegative R1 -- The function to integrate
   -> Subset a -- The subset we are integrating over
   -> Subset R1 -- The range of values of the function of this sum term
   -> ExtR1 -- The result
 lebTerm_ m fn x y = yterm * pterm
-  where yterm = extend $ mustHave "y = finite interval" $ infimum y :: ExtR1
-        pterm = volume m $ x ∩ (preimage fn (y ∩ range fn)) :: ExtR1
+ where
+  yterm = extend $ mustHave "y = finite interval" $ infimum y :: ExtR1
+  pterm = volume m $ x ∩ (preimage fn (y ∩ range fn)) :: ExtR1
 
 -- Given a list of partitions, compute the infinite sum
-lebSum_ :: Defined dom a
+lebSum_
+  :: Defined dom a
   => Measure dom a
   -> Fn dom a NonNegative R1
   -> Subset a
@@ -125,7 +142,8 @@ lebSum_ m fn x ys = sumSeq $ (lebTerm_ m fn x) <<. ys
 
 -- Given a sequence of ever finer partitions,
 -- compute the sequence of infinite sums
-lebSeq_ :: Defined dom a
+lebSeq_
+  :: Defined dom a
   => Measure dom a
   -> Fn dom a NonNegative R1
   -> Subset a
@@ -136,45 +154,58 @@ lebSeq_ m fn x pseq = pure (<.) <*> boxSum <*> pure pseq
 
 -- Lebesgue integral of non-negative functions
 -- Along one partition scheme
-lebP :: Defined dom a
+lebP
+  :: Defined dom a
   => Measure dom a -- m
   -> Fn dom a NonNegative R1 -- fn
   -> Subset a -- x
   -> Sequence AllOf Partition -- partitionSeq
   -> Maybe ExtR1
-lebP m fn x partitionSeq = coalesce $ (pure lim <*> lebSeq_ m fn x partitionSeq)
-  where coalesce Nothing = Nothing
-        coalesce (Just Nothing) = Nothing
-        coalesce (Just (Just x)) = Just x
+lebP m fn x partitionSeq =
+  coalesce $ (pure lim <*> lebSeq_ m fn x partitionSeq)
+ where
+  coalesce Nothing         = Nothing
+  coalesce (Just Nothing ) = Nothing
+  coalesce (Just (Just x)) = Just x
 
 -------------- The Lebesgue Integral (All Paths) ------------------
 
 -- ALL PATHS must converge to the same limit.
-lebPPaths :: Defined dom a
+lebPPaths
+  :: Defined dom a
   => Measure dom a -- m
   -> Fn dom a NonNegative R1 -- fn
   -> Subset a -- x
   -> Maybe ExtR1
 lebPPaths m fn x = coalesce $ singleton $ smap (lebP m fn x) integralPaths
-  where coalesce Nothing = Nothing
-        coalesce (Just Nothing) = Nothing
-        coalesce (Just (Just x)) = Just x
+ where
+  coalesce Nothing         = Nothing
+  coalesce (Just Nothing ) = Nothing
+  coalesce (Just (Just x)) = Just x
 
 -------------- The Lebesgue Integral (All Functions) ------------------
 
 -- Split a function into Non-Negative parts.
-split :: Defined dom a => Fn dom a AllOf R1
+split
+  :: Defined dom a
+  => Fn dom a AllOf R1
   -> (Fn dom a NonNegative R1, Fn dom a NonNegative R1)
 split fn = (posFn, negFn)
-  where
-    stuff = mustHave "defined for all x, y >= 0" . box
-    posFn = stuff $ \x -> if fn ⬅ x > zero then fn ⬅ x else zero
-    negFn = stuff $ \x -> if fn ⬅ x < zero then negate $ fn ⬅ x else zero
+ where
+  stuff = mustHave "defined for all x, y >= 0" . box
+  posFn = stuff $ \x -> if fn ⬅ x > zero then fn ⬅ x else zero
+  negFn = stuff $ \x -> if fn ⬅ x < zero then negate $ fn ⬅ x else zero
 
 -- int fn(.) dM over x
-integral :: Defined dom a
-  => Measure dom a -> Fn dom a AllOf R1 -> Subset a -> Maybe ExtR1
-integral m fn x | measurable (algebra m) lebesgueRd fn  =
+integral
+  :: Defined dom a
+  => Measure dom a
+  -> Fn dom a AllOf R1
+  -> Subset a
+  -> Maybe ExtR1
+integral m fn x | measurable (algebra m) lebesgueRd fn =
   if x ∈ (events . algebra) m then diff $ split fn else Nothing
-  where diff (posFn, negFn) = pure (-) <*> lebPPaths m posFn x <*> lebPPaths m negFn x
+ where
+  diff (posFn, negFn) =
+    pure (-) <*> lebPPaths m posFn x <*> lebPPaths m negFn x
 integral m fn x | otherwise = Nothing

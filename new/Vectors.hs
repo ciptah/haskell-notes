@@ -5,29 +5,47 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE Rank2Types #-}
 
-module Vectors (
-  Zero(zero),
-  Vector(Vec),
-  dim,
-  (@@),
-  vecToList,
-  vzip, vmap, (|+|), (|-|), (|*), (*|), (|.|),
-  norm1, norm2, normInf, perpendicular,
-  Selection,
-  sel, selFn, pickFn,
-  (!>),
-  project,
-  zeroV,
+module Vectors
+  ( Zero(zero)
+  , Vector(Vec)
+  , dim
+  , (@@)
+  , vecToList
+  , vzip
+  , vmap
+  , (|+|)
+  , (|-|)
+  , (|*)
+  , (*|)
+  , (|.|)
+  , norm1
+  , norm2
+  , normInf
+  , perpendicular
+  , Selection
+  , sel
+  , selFn
+  , pickFn
+  , (!>)
+  , project
+  , zeroV
+  , R1
+  , toR1
+  , R2
+  , RD
+  , UnitBall
+  , Direction
+  , OpenBall(..)
+  , Segment(..)
+  )
+where
 
-  R1, toR1, R2, RD, UnitBall, Direction, OpenBall(..), Segment(..)
-) where
+import           GHC.TypeLits
+import           Data.Proxy
+import           Data.Maybe                     ( fromJust )
 
-import GHC.TypeLits
-import Data.Proxy
-import Data.Maybe (fromJust)
-
-import Sets
-import Functions
+import           Sets
+import           Functions
 
 -------------- Basics ------------------
 
@@ -49,7 +67,7 @@ v@(Vec lst) @@ d | dim v > d =
 
 -- Converting to list, length is always of dimension.
 vecToList :: (Zero a, KnownNat n) => Vector n a -> [a]
-vecToList v@(Vec x) = map (v @@) [0..((fromIntegral $ dim v) - 1)]
+vecToList v@(Vec x) = map (v @@) [0 .. ((fromIntegral $ dim v) - 1)]
 
 -------------- Instantiations ------------------
 
@@ -90,8 +108,12 @@ instance (Zero a, Fractional a) => Fractional (Vector 1 a) where
 vmap :: (Zero a, KnownNat n) => (a -> b) -> Vector n a -> Vector n b
 vmap fn v = Vec $ map fn $ vecToList v
 
-vzip :: (Zero a, Zero b, Zero c, KnownNat n)
-  => (a -> b -> c) -> Vector n a -> Vector n b -> Vector n c
+vzip
+  :: (Zero a, Zero b, Zero c, KnownNat n)
+  => (a -> b -> c)
+  -> Vector n a
+  -> Vector n b
+  -> Vector n c
 vzip fn v1 v2 =
   Vec $ map (\(x, y) -> fn x y) $ zip (vecToList v1) (vecToList v2)
 
@@ -135,45 +157,58 @@ distance v1 v2 = norm2 $ v1 |-| v2
 -- Select m unique things from 0..n-1
 data Selection (m :: Nat) (n :: Nat) = Select (Vector m Integer)
 
-validSel_ :: (KnownNat m, KnownNat n) =>
-  Selection m n -> Proxy m -> Proxy n -> Bool
+validSel_
+  :: (KnownNat m, KnownNat n) => Selection m n -> Proxy m -> Proxy n -> Bool
 validSel_ (Select v) pm pn = and $ map (\x -> x < natVal pn) $ vecToList v
 
 -- All vector elements must be valid instances of a (relative to AllOf a).
 instance (KnownNat m, KnownNat n) => Defined AllOf (Selection m n)
   where candidate _ sel = validSel_ sel Proxy Proxy
 
-sel_ :: (KnownNat m, KnownNat n) =>
-  Proxy m -> Proxy n -> [Integer] -> Maybe (Selection m n)
-sel_ pm pn lst = let c = Select $ Vec lst in
-  if validSel_ c pm pn then Just c else Nothing
+sel_
+  :: (KnownNat m, KnownNat n)
+  => Proxy m
+  -> Proxy n
+  -> [Integer]
+  -> Maybe (Selection m n)
+sel_ pm pn lst =
+  let c = Select $ Vec lst in if validSel_ c pm pn then Just c else Nothing
 
 sel :: (KnownNat m, KnownNat n) => [Integer] -> Maybe (Selection m n)
 sel lst = sel_ Proxy Proxy lst
 
 -- Pick several components of the vector.
-(!>) :: (Zero a, KnownNat m, KnownNat n)
-  => Vector n a -> Selection m n -> Vector m a
+(!>)
+  :: (Zero a, KnownNat m, KnownNat n)
+  => Vector n a
+  -> Selection m n
+  -> Vector m a
 vec !> (Select sel) = vmap (vec @@) sel
 
 -- Project all the vectors in the set.
 project
-  :: (Zero a, Defined set (Vector n a), Defined AllOf a,
-      KnownNat m, KnownNat n) =>
-     set (Vector n a) -> Selection m n -> Subset (Vector m a)
+  :: (Zero a, Defined set (Vector n a), Defined AllOf a, KnownNat m, KnownNat n)
+  => set (Vector n a)
+  -> Selection m n
+  -> Subset (Vector m a)
 project vs selection = smap (\v -> v !> selection) vs
 
-selFn :: (KnownNat n, KnownNat m, Zero a,
-          Defined set (Vector n a),
-          Defined set (Vector m a))
-  => Selection m n -> Fn set (Vector n a) set (Vector m a)
+selFn
+  :: ( KnownNat n
+     , KnownNat m
+     , Zero a
+     , Defined set (Vector n a)
+     , Defined set (Vector m a)
+     )
+  => Selection m n
+  -> Fn set (Vector n a) set (Vector m a)
 selFn sel = fromJust $ box $ (!> sel)
 
 -- The "set" constraint isn't propagated form the vector to the contents.
-pickFn :: (KnownNat n, Zero a,
-          Defined set (Vector n a),
-          Defined AllOf a)
-  => Integer -> Fn set (Vector n a) AllOf a
+pickFn
+  :: (KnownNat n, Zero a, Defined set (Vector n a), Defined AllOf a)
+  => Integer
+  -> Fn set (Vector n a) AllOf a
 pickFn d = fromJust $ box $ (@@ d)
 
 zeroV :: (KnownNat n) => Vector n RealNum
@@ -221,5 +256,5 @@ instance (KnownNat n) => Defined Segment (RD n) where
     \d -> x == pA |+| d *| (pB |-| pA)
 instance (KnownNat n) => Defined AllOf (Segment (RD n)) where
   candidate _ (Segment pA pB) = valid pA && valid pB && pA /= pB
-   
+
 

@@ -4,23 +4,27 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module SigmaAlgebra (
-  SigmaAlgebra(outcomes, events), sigmaAlgebra,
-  canMeasure, subOf, generate,
-  borelRd,
+module SigmaAlgebra
+  ( SigmaAlgebra(outcomes, events)
+  , sigmaAlgebra
+  , canMeasure
+  , subOf
+  , generate
+  , borelRd
+  , TimeIndexedSA
+  , allFiltrations
+  , isFiltration
+  , measurable
+  )
+where
 
-  TimeIndexedSA,
-  allFiltrations, isFiltration,
-  measurable
-) where
+import           Data.Maybe
+import           GHC.TypeLits
 
-import Data.Maybe
-import GHC.TypeLits
-
-import Sets
-import Vectors
-import Analysis
-import Functions
+import           Sets
+import           Vectors
+import           Analysis
+import           Functions
 
 --------------- Definition & Construction --------------
 
@@ -29,8 +33,9 @@ data SigmaAlgebra set w = SigmaAlgebra {
   events :: Subset (Subset w)
 }
 
-sigmaAlgebra out ev = let candidate = SigmaAlgebra out ev in
-  if valid candidate then Just candidate else Nothing
+sigmaAlgebra out ev =
+  let candidate = SigmaAlgebra out ev
+  in  if valid candidate then Just candidate else Nothing
 
 -- Define the validity of all sigma-algebra constructions.
 -- The SA must be self-consistent.
@@ -54,21 +59,26 @@ canMeasure :: Defined AllOf w => SigmaAlgebra set w -> Subset w -> Bool
 sa `canMeasure` event = event ∈ events sa
 
 -- Whether this S-A is included in another. Strict.
-subOf :: (Eq w, Defined set w)
-  => SigmaAlgebra set w -> SigmaAlgebra set w -> Bool
-sa `subOf` sb = sa /= sb && outcomes sa === outcomes sb && events sa ⊆ events sb
+subOf
+  :: (Eq w, Defined set w) => SigmaAlgebra set w -> SigmaAlgebra set w -> Bool
+sa `subOf` sb =
+  sa /= sb && outcomes sa === outcomes sb && events sa ⊆ events sb
 
 -- Generate from a set. Find the unique minimal S-A that contains all events.
 -- If samples and seed aren't compatible this might fail to produce a result.
-generate :: (Eq w, Defined set w, Defined set1 (Subset w))
-  => set w -> set1 (Subset w) -> Maybe (SigmaAlgebra set w)
-generate out seed = 
+generate
+  :: (Eq w, Defined set w, Defined set1 (Subset w))
+  => set w
+  -> set1 (Subset w)
+  -> Maybe (SigmaAlgebra set w)
+generate out seed =
   let candidates = everything % \sa -> outcomes sa === out && seed ⊆ events sa
-  in if forAll seed $ \event -> event ⊆ out then
-    -- Emphasize that this always succeeds.
-    Just $ fromJust $ singleton $ candidates % \sa ->
-      (forAll candidates $ \sb -> sa == sb || sa `subOf` sb)
-  else Nothing
+  in  if forAll seed $ \event -> event ⊆ out
+        then
+     -- Emphasize that this always succeeds.
+             Just $ fromJust $ singleton $ candidates % \sa ->
+          (forAll candidates $ \sb -> sa == sb || sa `subOf` sb)
+        else Nothing
 
 --------------- The Borel σ-algebra of Real numbers --------
 
@@ -107,7 +117,11 @@ isFiltration fsa = fsa ∈ allFiltrations
 -- Definition 3.1. Let (X, A) and (Y, B) be measurable spaces.
 -- A function f : X → Y is measurable if inv.f (B) ∈ A for every B ∈ B.
 
-measurable :: (Defined dom a, Defined cod b, Eq b)
-  => SigmaAlgebra dom a -> SigmaAlgebra cod b -> Fn dom a cod b -> Bool
+measurable
+  :: (Defined dom a, Defined cod b, Eq b)
+  => SigmaAlgebra dom a
+  -> SigmaAlgebra cod b
+  -> Fn dom a cod b
+  -> Bool
 measurable dom cod fn =
   forAll (events cod) $ \results -> dom `canMeasure` preimage fn results

@@ -6,20 +6,37 @@
 {-# LANGUAGE UndecidableSuperClasses #-}
 
 -- https://www.math.ucdavis.edu/~hunter/intro_analysis_pdf/intro_analysis.pdf
-module Analysis(
-  bounds, upperBounds, lowerBounds,
-  bounded, upperBounded, lowerBounded,
-  supremum, infimum,
-  supremumFn, infimumFn, mappers,
-  equalCardinality, finite, countable,
-  interior, neighborhood, isolated, boundary, accumulation,
-  toList, sureSup, sureInf, Complete
-) where
+module Analysis
+  ( bounds
+  , upperBounds
+  , lowerBounds
+  , bounded
+  , upperBounded
+  , lowerBounded
+  , supremum
+  , infimum
+  , supremumFn
+  , infimumFn
+  , mappers
+  , equalCardinality
+  , finite
+  , countable
+  , interior
+  , neighborhood
+  , isolated
+  , boundary
+  , accumulation
+  , toList
+  , sureSup
+  , sureInf
+  , Complete
+  )
+where
 
-import Functions
-import GHC.TypeLits
-import Sets
-import Vectors
+import           Functions
+import           GHC.TypeLits
+import           Sets
+import           Vectors
 
 data Bound x = UpperBound x | LowerBound x
 isUpperBound (UpperBound _) = True
@@ -39,8 +56,9 @@ instance (Defined AllOf x) => Defined AllOf (Bound x) where
 -- From all "claimants", filter to the ones that actually is a bound
 bounds :: (Defined set x, Ord x) => set x -> Subset (Bound x)
 bounds set = everything % \r -> forAll set $ \x -> r `bounds` x
-  where (UpperBound r) `bounds` x = r >= x
-        (LowerBound r) `bounds` x = r <= x
+ where
+  (UpperBound r) `bounds` x = r >= x
+  (LowerBound r) `bounds` x = r <= x
 
 -- Subset of Everything that are upper/lower bounds of a set
 upperBounds set = smap valueOf (bounds set % isUpperBound)
@@ -72,25 +90,34 @@ instance Complete (Vector 1 RealNum) where
 
 -------------- Bounds/maps of functions ------------------
 
-supremumFn :: (Defined dom x, Defined cod RealNum)
-  => Fn dom x cod RealNum -> Subset x -> Maybe RealNum
+supremumFn
+  :: (Defined dom x, Defined cod RealNum)
+  => Fn dom x cod RealNum
+  -> Subset x
+  -> Maybe RealNum
 supremumFn fn set = supremum $ smap (f fn) set
 
-infimumFn :: (Defined dom x, Defined cod RealNum)
-  => Fn dom x cod RealNum -> Subset x -> Maybe RealNum
+infimumFn
+  :: (Defined dom x, Defined cod RealNum)
+  => Fn dom x cod RealNum
+  -> Subset x
+  -> Maybe RealNum
 infimumFn fn set = infimum $ smap (f fn) set
 
 -- Find all (bijective mappings from one set to another)
 -- By definition the existence of this bijective mapping means the sets
 -- must have same cardinality.
-mappers :: (Eq a, Eq b, Defined set1 a, Defined set2 b)
-  => set1 a -> set2 b -> Subset (Fn set1 a set2 b)
+mappers
+  :: (Eq a, Eq b, Defined set1 a, Defined set2 b)
+  => set1 a
+  -> set2 b
+  -> Subset (Fn set1 a set2 b)
 mappers x y = everything % \boxed -> bijective boxed
 
 -------------- Cardinality & Finiteness ------------------
 
-equalCardinality :: (Eq a, Eq b, Defined set1 a, Defined set2 b)
-  => set1 a -> set2 b -> Bool
+equalCardinality
+  :: (Eq a, Eq b, Defined set1 a, Defined set2 b) => set1 a -> set2 b -> Bool
 equalCardinality x y = mappers x y =/= empty
 
 -- All sets of the form {1, ... n} for some n ∈ naturals
@@ -102,8 +129,8 @@ instance Defined Index [Integer] where
     \bigN -> list == [1..bigN]
 
 finite :: (Defined set a, Eq a) => set a -> Bool
-finite x = x === empty ||
-  thereExists (Everything :: Index [Integer]) (\ ix -> x `equalCardinality` ix)
+finite x = x === empty || thereExists (Everything :: Index [Integer])
+                                      (\ix -> x `equalCardinality` ix)
 
 countable x = finite x || x `equalCardinality` (Everything :: Positive Integer)
 
@@ -115,8 +142,8 @@ countable x = finite x || x `equalCardinality` (Everything :: Positive Integer)
 -- The wikipedia page uses strict contains, but this is equivalent, because
 -- we can just halve the "proofing" delta to get a proper subset.
 interior :: (Defined set (RD n), KnownNat n) => set (RD n) -> RD n -> Bool
-interior set x = thereExists (Everything :: Positive RealNum) $
-  \d -> OpenBall x d ⊆ set
+interior set x =
+  thereExists (Everything :: Positive RealNum) $ \d -> OpenBall x d ⊆ set
 
 -- Incidentally open sets are sets that are entirely made out of interior pts.
 
@@ -128,8 +155,8 @@ neighborhood = flip interior
 -- an isolated point of A if x ∈ A and there exists δ > 0 such that x is the
 -- only point in A that belongs to the interval (x − δ, x + δ)
 isolated :: (Defined set (RD n), KnownNat n) => set (RD n) -> RD n -> Bool
-isolated set x = thereExists (Everything :: Positive RealNum) $
-  \d -> set ∩ OpenBall x d == singletonOf x -- x ∈ set is implied
+isolated set x = thereExists (Everything :: Positive RealNum)
+  $ \d -> set ∩ OpenBall x d == singletonOf x -- x ∈ set is implied
 
 using :: String -> Bool
 using = error "Blah"
@@ -139,15 +166,14 @@ using = error "Blah"
 boundary :: (Defined set (RD n), KnownNat n) => set (RD n) -> RD n -> Bool
 -- Two equivalent definitions.
 boundary set x | using "Self definition" =
-  forAll (Everything :: Positive RealNum) $
-    \d -> let ball = OpenBall x d in
-      ball ∩ set =/= empty && ball ∩ complement set =/= empty
+  forAll (Everything :: Positive RealNum) $ \d ->
+    let ball = OpenBall x d
+    in  ball ∩ set =/= empty && ball ∩ complement set =/= empty
 -- Points that are neither the interior of the set or complement of set.
 -- This makes it real clear that the boundary is shared between the set
 -- and complement of the set.
-boundary set x | using "Negation" =
-  not (interior (set ∪ singletonOf x) x) &&
-  not (interior (complement set ∪ singletonOf x) x)
+boundary set x | using "Negation" = not (interior (set ∪ singletonOf x) x)
+  && not (interior (complement set ∪ singletonOf x) x)
 
 -- an accumulation point of A if for every δ > 0 the interval (x−δ, x+δ)
 -- contains a point in A that is distinct from x

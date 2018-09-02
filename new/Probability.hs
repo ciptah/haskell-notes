@@ -3,22 +3,23 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module Probability (
-  Probability,
-  ProbabilitySpace(asMeasure),
-  allProbabilitySpaces,
-  asProbabilitySpace,
-  probability,
-  conditionalProbability,
-  independent
-) where
+module Probability
+  ( Probability
+  , ProbabilitySpace(asMeasure)
+  , allProbabilitySpaces
+  , asProbabilitySpace
+  , probability
+  , conditionalProbability
+  , independent
+  )
+where
 
-import Data.Maybe
-import Measures
-import Sequences
-import Sets
-import SigmaAlgebra
-import Vectors
+import           Data.Maybe
+import           Measures
+import           Sequences
+import           Sets
+import           SigmaAlgebra
+import           Vectors
 
 -- Probability spaces are measure spaces such that the measure of the whole
 -- space is equal to 1.
@@ -38,20 +39,23 @@ allProbabilitySpaces :: (Defined set w) => Probability (Measure set w)
 allProbabilitySpaces = Everything
 
 -- "Bless" a measure into a probability space.
-asProbabilitySpace :: (Eq w, Defined set w) => Measure set w -> Maybe (ProbabilitySpace set w)
-asProbabilitySpace ms
-  | ms ∈ allProbabilitySpaces = Just $ ProbabilitySpace ms
-  | otherwise = Nothing
+asProbabilitySpace
+  :: (Eq w, Defined set w) => Measure set w -> Maybe (ProbabilitySpace set w)
+asProbabilitySpace ms | ms ∈ allProbabilitySpaces = Just $ ProbabilitySpace ms
+                      | otherwise                 = Nothing
 
 probability :: Defined set1 w => ProbabilitySpace set w -> set1 w -> ExtR1
 probability ps = volume (asMeasure ps)
 
 conditionalProbability
-  :: (Defined set1 w, Defined set2 w) =>
-     ProbabilitySpace set w -> set1 w -> set2 w -> a
-conditionalProbability ps given event
-    = probability ps (given `intersect` event) // probability ps given
-    where (//) x y = error "TODO Force Real Division"
+  :: (Defined set1 w, Defined set2 w)
+  => ProbabilitySpace set w
+  -> set1 w
+  -> set2 w
+  -> a
+conditionalProbability ps given event =
+  probability ps (given `intersect` event) // probability ps given
+  where (//) x y = error "TODO Force Real Division"
 
 independent ps ea eb =
-    probability ps ea * probability ps eb == probability ps (ea `intersect` eb)
+  probability ps ea * probability ps eb == probability ps (ea `intersect` eb)

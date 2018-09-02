@@ -1,22 +1,36 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module Functions(
-  Fn,
-  domain,
-  codomain,
-  f, (⬅), -- u2b05
-  fnEquals,
-  clip, box, safeBox,
-  preimage, preimageOf, range,onto, one2one, bijective,
-  (<.), (<<.), rebox,
+module Functions
+  ( Fn
+  , domain
+  , codomain
+  , f
+  , (⬅) --u2b05
+  , fnEquals
+  , clip
+  , box
+  , safeBox
+  , preimage
+  , preimageOf
+  , range
+  , onto
+  , one2one
+  , bijective
+  , (<.)
+  , (<<.)
+  , rebox
+  , RealFn
+  , TimeFn
+  , PositiveFn
+  , ZeroOneFn
+  , Sequence
+  )
+where
 
-  RealFn, TimeFn, PositiveFn, ZeroOneFn, Sequence
-) where
-
-import Sets
-import Data.Maybe
+import           Data.Maybe
+import           Sets
 
 -------------- Definition & Accessors ------------------
 
@@ -43,16 +57,17 @@ instance (Defined dom a, Defined cod b) => Defined AllOf (Fn dom a cod b) where
 
 -- Generalized equals works when functions have different representations
 -- for domain and codomain, i.e. (Everything :: AllOf RealNum) === Subset True
-fnEquals ::
-    (Defined dom1 a,
-     Defined dom2 a,
-     Defined cod1 b,
-     Defined cod2 b,
-     Eq b)
-    => Fn dom1 a cod1 b -> Fn dom2 a cod2 b -> Bool
+fnEquals
+  :: (Defined dom1 a, Defined dom2 a, Defined cod1 b, Defined cod2 b, Eq b)
+  => Fn dom1 a cod1 b
+  -> Fn dom2 a cod2 b
+  -> Bool
 fnEquals f1 f2 =
-    domain f1 === domain f2 && codomain f1 === codomain f2 &&
-    (forAll (domain f1) $ \x -> f f1 x == f f2 x)
+  domain f1
+    === domain f2
+    &&  codomain f1
+    === codomain f2
+    &&  (forAll (domain f1) $ \x -> f f1 x == f f2 x)
 
 instance (
     Defined dom a, Defined AllOf a, Defined cod b, Defined AllOf b, Eq b
@@ -63,18 +78,22 @@ instance (
 
 -- Clip a raw function into the given domain and codomain.
 -- Might not work if the function is undefined in some part of the domain.
-clip :: (Defined dom a, Defined cod b, Eq b)
-  => (a -> b) -> dom a -> cod b -> Maybe (Fn dom a cod b)
+clip
+  :: (Defined dom a, Defined cod b, Eq b)
+  => (a -> b)
+  -> dom a
+  -> cod b
+  -> Maybe (Fn dom a cod b)
 clip fn dom cod = if valid ffn then Just ffn else Nothing
   where ffn = (Fn fn dom cod)
 
-box :: (Defined dom a, Defined cod b, Eq b)
-  => (a -> b) -> Maybe (Fn dom a cod b)
+box
+  :: (Defined dom a, Defined cod b, Eq b) => (a -> b) -> Maybe (Fn dom a cod b)
 -- To make a "raw" Haskell fn well-defined, pick the unique function that has
 -- the desired domain and codomain, that has the same behavior as fn within
 -- the domain (assuming fn is defined everywhere in the domain)
-box fn = singleton $ everything % \ffn ->
-    (forAll (domain ffn) $ \x -> fn x == f ffn x)
+box fn =
+  singleton $ everything % \ffn -> (forAll (domain ffn) $ \x -> fn x == f ffn x)
 
 -- This one is guaranteed to success (provided we can solve the halting problem)
 safeBox :: (Defined AllOf a, Defined AllOf b) => (a -> b) -> Fn Subset a AllOf b
@@ -83,13 +102,16 @@ safeBox f = Fn f (everything % \x -> halts f x && valid (f x)) everything
 
 -------------- Imaging/range. ------------------
 
-preimage :: (Defined dom a, Defined cod b, Defined set b)
-  => Fn dom a cod b -> set b -> Subset a
+preimage
+  :: (Defined dom a, Defined cod b, Defined set b)
+  => Fn dom a cod b
+  -> set b
+  -> Subset a
 preimage fn target = domain fn % \x -> fn ⬅ x ∈ target
 
 -- Same of above but only for a single value.
-preimageOf :: (Defined dom a, Defined cod b, Eq b)
-  => Fn dom a cod b -> b -> Subset a
+preimageOf
+  :: (Defined dom a, Defined cod b, Eq b) => Fn dom a cod b -> b -> Subset a
 preimageOf fn target = preimage fn $ singletonOf target
 
 -- Range is the subset of codomain that is reachable by the function.
@@ -116,23 +138,33 @@ rebox fn = box (f fn)
 -- Because of non-singleton set types (OpenBall, LineSegment, Subset)
 -- we technically can't guarantee that the type is "Fn dom a cod2 c"
 -- so we have to check the domain.
-safeCompose :: (Defined dom a, Defined cod1 b, Defined cod2 c)
-  => Fn cod1 b cod2 c -> Fn dom a cod1 b -> Fn Subset a cod2 c
+safeCompose
+  :: (Defined dom a, Defined cod1 b, Defined cod2 c)
+  => Fn cod1 b cod2 c
+  -> Fn dom a cod1 b
+  -> Fn Subset a cod2 c
 f2 `safeCompose` f1 | valid candidate = candidate
-  where candidate = Fn (f f2 . f f1) dom (codomain f2)
-        dom = domain f1 ∩ preimage f1 (domain f2 ∩ codomain f1)
+ where
+  candidate = Fn (f f2 . f f1) dom (codomain f2)
+  dom       = domain f1 ∩ preimage f1 (domain f2 ∩ codomain f1)
 
 -- By using the operator versions we are making the statement that
 -- f2 is able to accept any value f1 returns
 infixr 9 <.
-(<.) :: (Eq c, Defined dom a, Defined cod1 b, Defined cod2 c)
-  => Fn cod1 b cod2 c -> Fn dom a cod1 b -> Fn dom a cod2 c
+(<.)
+  :: (Eq c, Defined dom a, Defined cod1 b, Defined cod2 c)
+  => Fn cod1 b cod2 c
+  -> Fn dom a cod1 b
+  -> Fn dom a cod2 c
 f2 <. f1 = fromJust $ rebox $ f2 `safeCompose` f1
 
 -- In this version the outer function is a "raw" Haskell function.
 infixr 9 <<.
-(<<.) :: (Defined dom a, Defined cod1 b, Defined AllOf c, Eq c)
-  => (b -> c) -> Fn dom a cod1 b -> Fn dom a AllOf c
+(<<.)
+  :: (Defined dom a, Defined cod1 b, Defined AllOf c, Eq c)
+  => (b -> c)
+  -> Fn dom a cod1 b
+  -> Fn dom a AllOf c
 f2 <<. f1 = (fromJust $ box f2) <. f1
 
 -- To change domain/range, just rebox.

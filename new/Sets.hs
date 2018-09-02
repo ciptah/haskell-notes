@@ -19,43 +19,65 @@
 --
 -- To fix these problems we'll attach Symbols to the sets.
 
-module Sets(
-  Set(Everything),
-  Defined(candidate),
-  AllOf,
-  Subset,
-  Zero(..),
-  everything,
-  (%),
+module Sets
+  ( Set(Everything)
+  , Defined(candidate)
+  , AllOf
+  , Subset
+  , Zero(..)
+  , everything
+  , (%)
+  , (∈) -- u2208
+  , member
+  , (∉) -- u2209
+  , notMember
+  , valid
+  , empty
+  , intersect
+  , minus
+  , complement
+  , union
+  , star
+  , unionAll
+  , intersectAll
+  , thereExists
+  , singleton
+  , forAll
+  , isEmpty
+  , isSingleton
+  , setEquals
+  , (===)
+  , (=/=)
+  , singletonOf
+  , smap
+  , cartesian
+  , mask
+  , isSubsetOf
+  , (⊆) -- u2286
+  , isDisjoint
+  , (∩) -- u2229
+  , (∪) -- u222a
+  , power
+  , countableUnions
+  , isPairwiseDisjoint
+  , collapse
+  , mustHave
+  , RealNum
+  , Positive
+  , Negative
+  , NonNegative
+  , ZeroOne
+  , Increasing
+  , NonDecreasing
+  , Time
+  , Naturals
+  )
+where
 
-  (∈), member, -- u2208
-  (∉), notMember, -- u2209
-  valid,
+import           Data.Maybe
 
-  empty, intersect, minus, complement, union, star, unionAll, intersectAll,
-  thereExists, singleton, forAll, isEmpty, isSingleton, setEquals, (===), (=/=),
-  singletonOf, smap, cartesian, mask,
-  isSubsetOf, (⊆), isDisjoint, -- u2286
-  (∪), (∩), -- u222a, u2229
-  power, countableUnions, isPairwiseDisjoint, collapse,
-
-  mustHave,
-
-  RealNum,
-  Positive,
-  Negative,
-  NonNegative,
-  ZeroOne,
-  Increasing,
-  NonDecreasing,
-  Time,
-  Naturals,
-) where
-
-import Data.Maybe
-
-import Data.Proxy
-import GHC.TypeLits
+import           Data.Proxy
+import           GHC.TypeLits
 
 -- Set whose membership is defined by the symbol and content type.
 data Set (s :: Symbol) w = Everything
@@ -145,8 +167,7 @@ infix 4 ∉  -- Unicode hex 2209
 empty :: (Defined AllOf w) => Subset w
 empty = everything % \any -> False
 
-intersect :: (Defined set1 w, Defined set2 w)
-  => set1 w -> set2 w -> Subset w
+intersect :: (Defined set1 w, Defined set2 w) => set1 w -> set2 w -> Subset w
 intersect a b = a % \x -> x ∈ b
 
 minus :: (Defined set1 w, Defined set2 w) => set1 w -> set2 w -> Subset w
@@ -175,8 +196,7 @@ star set = everything % \xs -> and $ map (set `candidate`) xs
 unionAll :: (Defined set a, Foldable t) => t (set a) -> Subset a
 unionAll = foldr union empty
 
-intersectAll :: (Defined set a, Foldable t) =>
-  t (set a) -> Subset a
+intersectAll :: (Defined set a, Foldable t) => t (set a) -> Subset a
 intersectAll = foldr intersect (everything % \x -> True)
 
 -------------- Magical Ops ------------------
@@ -204,8 +224,7 @@ isEmpty set = thereExists set $ \any -> True
 isSingleton set = isJust $ singleton set
 
 -- Instance "Eq" doesn't work here because the types are different.
-setEquals :: (Defined set1 w, Defined set2 w) =>
-  set1 w -> set2 w -> Bool
+setEquals :: (Defined set1 w, Defined set2 w) => set1 w -> set2 w -> Bool
 setEquals set1 set2 = not $ thereExists everything $ \x ->
   (x ∈ set1 && x ∉ set2) || (x ∈ set2 && x ∉ set1)
 
@@ -225,13 +244,13 @@ singletonOf :: (Eq w, Defined AllOf w) => w -> Subset w
 singletonOf x = everything % \y -> y == x
 
 -- smap - Set map, similar to fmap, but only for Eq-able targets.
-smap :: (Defined set1 a, Defined AllOf b, Eq b) =>
-  (a -> b) -> set1 a -> Subset b
+smap
+  :: (Defined set1 a, Defined AllOf b, Eq b) => (a -> b) -> set1 a -> Subset b
 smap fn set = everything % \y -> thereExists set $ \x -> fn x == y
 
 -- Cartesian product.
-cartesian :: (Defined set1 w1, Defined set2 w2) =>
-  set1 w1 -> set2 w2 -> Subset (w1, w2)
+cartesian
+  :: (Defined set1 w1, Defined set2 w2) => set1 w1 -> set2 w2 -> Subset (w1, w2)
 cartesian setA setB = everything % \(w1, w2) -> w1 ∈ setA && w2 ∈ setB
 
 -------------- Subset operators ---------------------
@@ -252,10 +271,12 @@ power set = everything % \sub -> sub ⊆ set
 
 -- Given a set of sets X, return the set of sets made by countable unions
 -- of elements of X.
-countableUnions :: (Defined AllOf a, Defined set (Subset a))
-  => set (Subset a) -> Subset (Subset a)
+countableUnions
+  :: (Defined AllOf a, Defined set (Subset a))
+  => set (Subset a)
+  -> Subset (Subset a)
 countableUnions x =
-    everything % \y -> thereExists (star x) $ \seq -> unionAll seq == y
+  everything % \y -> thereExists (star x) $ \seq -> unionAll seq == y
 
 -- isPairwiseDisjoint intentionally not from Set (Set a), but from [Set a].
 -- This is so the behavior in duplicate sets is defined (will return False)
@@ -263,13 +284,15 @@ countableUnions x =
 -- This method is computable for list sets.
 isPairwiseDisjoint :: Defined AllOf a => [Subset a] -> Bool
 isPairwiseDisjoint sets = and $ map disjoint setPairs
-  where indices = [0..(length sets)]
-        indexPairs = [(x, y) | x <- indices, y <- indices]
-        diffPairs = filter (\(x, y) -> x /= y) indexPairs
-        setPairs = map (\(x, y) -> (sets!!x, sets!!y)) diffPairs
-        disjoint (x, y) = x `isDisjoint` y
+ where
+  indices    = [0 .. (length sets)]
+  indexPairs = [ (x, y) | x <- indices, y <- indices ]
+  diffPairs  = filter (\(x, y) -> x /= y) indexPairs
+  setPairs   = map (\(x, y) -> (sets !! x, sets !! y)) diffPairs
+  disjoint (x, y) = x `isDisjoint` y
 
-collapse :: (Defined set (Maybe a), Defined AllOf a) => set (Maybe a) -> Subset a
+collapse
+  :: (Defined set (Maybe a), Defined AllOf a) => set (Maybe a) -> Subset a
 collapse s = everything % \x -> Just x ∈ s
 
 -------------- Examples ---------------------
