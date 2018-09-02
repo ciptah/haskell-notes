@@ -29,6 +29,8 @@ import GHC.TypeLits
 
 -------------- Measures ------------------
 
+-- Technically this is a "measure space" because by having the sigma-algebra
+-- we define the outcome set as well.
 data Measure set w = Measure {
   algebra :: SigmaAlgebra set w,
   fn :: Fn Subset (Subset w) NonNegative ExtR1
@@ -49,7 +51,10 @@ instance (Eq w, Defined set w) => Defined AllOf (Measure set w) where
       (fn m ← unionAll sets) == (sum $ map (f $ fn m) sets))
     where disjoints = (star $ events $ algebra m) % isPairwiseDisjoint
 
-volume m x | x ∈ (events . algebra) m = fn m ← x
+-- Apply the measure on a set.
+volume :: Defined set1 w => Measure set w -> set1 w -> ExtR1
+volume m x | (algebra m) `canMeasure` ex = fn m ← ex
+  where ex = mask x
 
 -------------- Lebesgue Outer Measure ------------------
 

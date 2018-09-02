@@ -10,7 +10,7 @@ module SigmaAlgebra (
   borelRd,
 
   TimeIndexedSA,
-  filtrations, isFiltration,
+  allFiltrations, isFiltration,
   measurable
 ) where
 
@@ -95,11 +95,11 @@ instance (Defined set w, Eq w) => Defined Filtration (TimeIndexedSA set w) where
     where time = Everything :: NonNegative R1
 
 -- Get me all possible filtrations of the outcome set.
-filtrations :: (Defined set w, Eq w) => Filtration (TimeIndexedSA set w)
-filtrations = Everything
+allFiltrations :: (Defined set w, Eq w) => Filtration (TimeIndexedSA set w)
+allFiltrations = Everything
 
 isFiltration :: (Eq w, Defined set w) => TimeIndexedSA set w -> Bool
-isFiltration fsa = fsa ∈ filtrations
+isFiltration fsa = fsa ∈ allFiltrations
 
 --------------- Function Measurability ------------------
 

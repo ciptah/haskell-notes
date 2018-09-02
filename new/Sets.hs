@@ -34,7 +34,7 @@ module Sets(
 
   empty, intersect, minus, complement, union, star, unionAll, intersectAll,
   thereExists, singleton, forAll, isEmpty, isSingleton, setEquals, (===), (=/=),
-  singletonOf, smap, cartesian,
+  singletonOf, smap, cartesian, mask,
   isSubsetOf, (⊆), isDisjoint, -- u2286
   (∪), (∩), -- u222a, u2229
   power, countableUnions, isPairwiseDisjoint, collapse,
