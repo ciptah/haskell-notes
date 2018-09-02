@@ -1,8 +1,8 @@
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DataKinds               #-}
+{-# LANGUAGE FlexibleContexts        #-}
+{-# LANGUAGE FlexibleInstances       #-}
+{-# LANGUAGE MultiParamTypeClasses   #-}
+{-# LANGUAGE TypeSynonymInstances    #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
 
 -- https://www.math.ucdavis.edu/~hunter/intro_analysis_pdf/intro_analysis.pdf
@@ -16,10 +16,10 @@ module Analysis(
   toList, sureSup, sureInf, Complete
 ) where
 
-import Sets
 import Functions
-import Vectors
 import GHC.TypeLits
+import Sets
+import Vectors
 
 data Bound x = UpperBound x | LowerBound x
 isUpperBound (UpperBound _) = True
@@ -102,9 +102,8 @@ instance Defined Index [Integer] where
     \bigN -> list == [1..bigN]
 
 finite :: (Defined set a, Eq a) => set a -> Bool
-finite x = x === empty || (
-  thereExists (Everything :: Index [Integer]) $
-    \ix -> x `equalCardinality` ix)
+finite x = x === empty ||
+  thereExists (Everything :: Index [Integer]) (\ ix -> x `equalCardinality` ix)
 
 countable x = finite x || x `equalCardinality` (Everything :: Positive Integer)
 
@@ -142,13 +141,13 @@ boundary :: (Defined set (RD n), KnownNat n) => set (RD n) -> RD n -> Bool
 boundary set x | using "Self definition" =
   forAll (Everything :: Positive RealNum) $
     \d -> let ball = OpenBall x d in
-      ball ∩ set =/= empty && ball ∩ (complement set) =/= empty
+      ball ∩ set =/= empty && ball ∩ complement set =/= empty
 -- Points that are neither the interior of the set or complement of set.
 -- This makes it real clear that the boundary is shared between the set
 -- and complement of the set.
 boundary set x | using "Negation" =
-  (not $ interior (set ∪ singletonOf x) x) &&
-  (not $ interior (complement set ∪ singletonOf x) x)
+  not (interior (set ∪ singletonOf x) x) &&
+  not (interior (complement set ∪ singletonOf x) x)
 
 -- an accumulation point of A if for every δ > 0 the interval (x−δ, x+δ)
 -- contains a point in A that is distinct from x

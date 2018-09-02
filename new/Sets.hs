@@ -1,11 +1,11 @@
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE DataKinds                 #-}
 {-# LANGUAGE ExistentialQuantification #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE UndecidableSuperClasses #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE FlexibleInstances         #-}
+{-# LANGUAGE KindSignatures            #-}
+{-# LANGUAGE MultiParamTypeClasses     #-}
+{-# LANGUAGE UndecidableInstances      #-}
+{-# LANGUAGE UndecidableSuperClasses   #-}
 
 -- Set theory in Haskell (v2)
 -- There are two "primitive" operations:
@@ -54,8 +54,8 @@ module Sets(
 
 import Data.Maybe
 
-import GHC.TypeLits
 import Data.Proxy
+import GHC.TypeLits
 
 -- Set whose membership is defined by the symbol and content type.
 data Set (s :: Symbol) w = Everything
@@ -118,7 +118,7 @@ instance (Defined AllOf r, Eq r) => Defined [] r where
 
 instance (Defined AllOf r, Eq r) => Defined AllOf (Maybe r) where
   candidate _ (Just x) = valid x
-  candidate _ Nothing = True
+  candidate _ Nothing  = True
 
 instance (Defined AllOf a, Defined AllOf b) => Defined AllOf (a, b) where
   candidate _ (a, b) = valid a && valid b
@@ -230,7 +230,7 @@ smap :: (Defined set1 a, Defined AllOf b, Eq b) =>
 smap fn set = everything % \y -> thereExists set $ \x -> fn x == y
 
 -- Cartesian product.
-cartesian :: (Defined set1 w1, Defined set2 w2) => 
+cartesian :: (Defined set1 w1, Defined set2 w2) =>
   set1 w1 -> set2 w2 -> Subset (w1, w2)
 cartesian setA setB = everything % \(w1, w2) -> w1 ∈ setA && w2 ∈ setB
 
@@ -302,11 +302,11 @@ type Time = NonNegative RealNum
 type Naturals = Positive Integer
 
 instance Defined Increasing [RealNum] where
-  candidate _ [] = True
-  candidate _ (x:[]) = True
+  candidate _ []           = True
+  candidate _ (x:[])       = True
   candidate set (y:(x:xs)) = y < x && candidate set (x:xs)
 
 instance Defined NonDecreasing [RealNum] where
-  candidate _ [] = True
-  candidate _ (x:[]) = True
+  candidate _ []           = True
+  candidate _ (x:[])       = True
   candidate set (y:(x:xs)) = y <= x && candidate set (x:xs)
