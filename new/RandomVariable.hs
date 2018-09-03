@@ -173,3 +173,7 @@ distCompose fn dist | borelMeasurable fn =
 -- random variable that generated the distribution originally (the one with
 -- "set w"). Many RVs can have the same distribution but completely different
 -- outcome sets.
+
+-------------------------- PMF and PDF ---------------------------
+
+-- COMING SOON
