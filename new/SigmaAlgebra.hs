@@ -15,6 +15,7 @@ module SigmaAlgebra
   , allFiltrations
   , isFiltration
   , measurable
+  , borelMeasurable
   )
 where
 
@@ -125,3 +126,8 @@ measurable
   -> Bool
 measurable dom cod fn =
   forAll (events cod) $ \results -> dom `canMeasure` preimage fn results
+
+-- Is the function between real vectors measurable wrt borel sigma-algebras
+borelMeasurable
+  :: (KnownNat n1, KnownNat n2) => Fn AllOf (RD n1) AllOf (RD n2) -> Bool
+borelMeasurable fn = measurable borelRd borelRd fn

@@ -19,8 +19,13 @@ module RandomVariable
   , rvPreimage
   , rvSelect
   , rvPick
+  , rvCompose
   , Distribution
   , distribution
+  , expectation
+  , expectedComponent
+  , mean
+  , distCompose
   )
 where
 
@@ -77,20 +82,29 @@ rvPreimage rv target | borelRd `canMeasure` target =
 
 -- Apply the "vector selection" operator to the random vector.
 rvSelect
-  :: (KnownNat dim, KnownNat n, Defined dom a2)
+  :: (KnownNat dim, KnownNat n, Defined dom a2, Eq a2)
   => Selection dim n
   -> RandomVector n dom a2
   -> RandomVector dim dom a2
-rvSelect sel rv =
-  RandomVector (underlyingSpace rv) (stripFn sel (deterministicFn rv))
+rvSelect sel rv = fromJust
+  $ toRandomVector (underlyingSpace rv) (stripFn sel (deterministicFn rv))
 
 -- Pick one component of the random vector as a random variable.
 rvPick
-  :: (KnownNat dim, Defined dom a2)
+  :: (KnownNat dim, Defined dom a2, Eq a2)
   => Integer
   -> RandomVector dim dom a2
   -> RandomVariable dom a2
 rvPick d rv = rvSelect (fromJust $ sel [d]) rv
+
+-- Composition of a RV with another function yields another RV.
+rvCompose
+  :: (KnownNat dim1, KnownNat dim2, Defined dom a, Eq a)
+  => Fn AllOf (RD dim1) AllOf (RD dim2)
+  -> RandomVector dim1 dom a
+  -> RandomVector dim2 dom a
+rvCompose fn rv | borelMeasurable fn =
+  fromJust $ toRandomVector (underlyingSpace rv) (fn <. deterministicFn rv)
 
 -------------------------- Distributions ---------------------------
 
@@ -126,3 +140,36 @@ expectation
   :: (KnownNat n) => Distribution n -> Fn AllOf (RD n) AllOf R1 -> ExtR1
 expectation dist fn = fromJust
   $ integral (asMeasure dist) fn (mask $ outcomes $ algebra $ asMeasure dist)
+
+-- Expected value of a component of the distribution.
+expectedComponent :: KnownNat n => Distribution n -> Integer -> ExtR1
+expectedComponent dist d = expectation dist (selFn $ fromJust $ sel [d])
+
+dim_ :: (KnownNat n) => Proxy n -> Distribution n -> Integer
+dim_ proxy _ = natVal proxy
+
+-- Expected vector of the distribution.
+mean :: KnownNat n => Distribution n -> Vector n ExtR1
+mean dist = Vec $ map (expectedComponent dist) [1 .. (dim_ Proxy dist)]
+
+-- Composition of a distribution to another distribution. Basically
+-- "masking" the outcome of the original random variable.
+-- It's not the same as composing the original random variable because we don't
+-- need to remember the original set.
+--
+-- This is not a generic probability space composition function. To create
+-- something like that we need to pass in a function and a sigma-algebra
+-- instead of a function that we require to be borel measurable
+distCompose
+  :: (KnownNat n, KnownNat m)
+  => Fn AllOf (RD m) AllOf (RD n)
+  -> Distribution m
+  -> Distribution n
+distCompose fn dist | borelMeasurable fn =
+  distribution $ fromJust $ toRandomVector dist fn
+
+-- Since distributions are probability spaces one can turn it back to a
+-- random variable using an identity function. However this is NOT the same
+-- random variable that generated the distribution originally (the one with
+-- "set w"). Many RVs can have the same distribution but completely different
+-- outcome sets.

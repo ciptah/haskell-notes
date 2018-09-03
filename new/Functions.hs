@@ -12,6 +12,7 @@ module Functions
   , clip
   , box
   , safeBox
+  , identity
   , preimage
   , preimageOf
   , range
@@ -99,6 +100,9 @@ box fn =
 safeBox :: (Defined AllOf a, Defined AllOf b) => (a -> b) -> Fn Subset a AllOf b
 safeBox f = Fn f (everything % \x -> halts f x && valid (f x)) everything
   where halts f x = error "****** Halting problem *****"
+
+identity :: (Defined set a, Eq a) => Fn set a set a
+identity = fromJust $ box $ \x -> x
 
 -------------- Imaging/range. ------------------
 
