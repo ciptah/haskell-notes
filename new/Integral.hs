@@ -74,23 +74,23 @@ intervals :: R1 -> Subset Partition
 intervals maxSize = everything % \partition ->
   let sets = range partition
   in
--- All partitions are disjoint.
+    -- All partitions are disjoint.
     (forAll sets $ \s1 ->
       forAll (sets `minus` singletonOf s1) $ \s2 -> s1 `isDisjoint` s2
     )
     &&
--- All partitions are half-open intervals.
+        -- All partitions are half-open intervals.
         (forAll sets $ \s -> s ∈ halfOpens)
     &&
--- All partitions combine into the original set.
+        -- All partitions combine into the original set.
         unionSeq partition
     === everything
     &&
--- The largest partition size is the (finite) mesh.
+        -- The largest partition size is the (finite) mesh.
         mesh partition
     ==  (Just $ extend maxSize)
     &&
--- Sets start at 0.
+        -- Sets start at 0.
        (forAll sets $ \s -> (mustHave "reals are complete" $ infimum s) >= zero)
 
 -- Any partition of finite intervals.

@@ -41,7 +41,7 @@ import           GHC.TypeLits
 data Measure set w = Measure {
   algebra :: SigmaAlgebra set w,
   fn :: Fn Subset (Subset w) NonNegative ExtR1
-}
+} deriving Eq
 
 measure alg fn =
   let candidate = Measure alg fn

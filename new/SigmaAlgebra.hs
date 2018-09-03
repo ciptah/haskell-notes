@@ -55,8 +55,8 @@ instance (Eq w, Defined set w) => Eq (SigmaAlgebra set w) where
   sa1 == sa2 = events sa1 === events sa2
 
 -- Whether this algebra can understand/measure this event.
-canMeasure :: Defined AllOf w => SigmaAlgebra set w -> Subset w -> Bool
-sa `canMeasure` event = event ∈ events sa
+canMeasure :: Defined set2 w => SigmaAlgebra set w -> set2 w -> Bool
+sa `canMeasure` event = mask event ∈ events sa
 
 -- Whether this S-A is included in another. Strict.
 subOf

@@ -26,6 +26,7 @@ module Vectors
   , sel
   , selFn
   , pickFn
+  , stripFn
   , (!>)
   , project
   , zeroV
@@ -193,6 +194,7 @@ project
   -> Subset (Vector m a)
 project vs selection = smap (\v -> v !> selection) vs
 
+-- Produce a Fn that applies the selection to the input.
 selFn
   :: ( KnownNat n
      , KnownNat m
@@ -204,12 +206,28 @@ selFn
   -> Fn set (Vector n a) set (Vector m a)
 selFn sel = fromJust $ box $ (!> sel)
 
+-- A function that picks the d-th component of the vector.
 -- The "set" constraint isn't propagated form the vector to the contents.
 pickFn
   :: (KnownNat n, Zero a, Defined set (Vector n a), Defined AllOf a)
   => Integer
   -> Fn set (Vector n a) AllOf a
 pickFn d = fromJust $ box $ (@@ d)
+
+-- Given a function that returns a vector, return another function that
+-- returns the result of the first function passed through a selection.
+stripFn
+  :: ( Zero a1
+     , KnownNat m
+     , KnownNat n
+     , Defined dom a2
+     , Defined cod2 (Vector n a1)
+     , Defined cod2 (Vector m a1)
+     )
+  => Selection m n
+  -> Fn dom a2 cod2 (Vector n a1)
+  -> Fn dom a2 cod2 (Vector m a1)
+stripFn sel origFn = (selFn sel) <. origFn
 
 zeroV :: (KnownNat n) => Vector n RealNum
 zeroV = Vec []

@@ -33,7 +33,7 @@ instance (Defined set w, Eq w) => Defined Probability (Measure set w) where
 -- A "blessed" probability space whose measure is a probability measure
 newtype ProbabilitySpace set w = ProbabilitySpace {
   asMeasure :: Measure set w
-}
+} deriving Eq
 
 allProbabilitySpaces :: (Defined set w) => Probability (Measure set w)
 allProbabilitySpaces = Everything
