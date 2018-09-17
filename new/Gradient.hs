@@ -2,14 +2,15 @@
 module Gradient
   ( gradient
   , derivative
-) where
+  )
+where
 
 import           Sets
 import           Sequences
 import           Analysis
 import           Vectors
 import           Functions
-import Limits
+import           Limits
 
 import           Data.Maybe
 import           Data.Proxy
@@ -79,10 +80,13 @@ derivative = gradient
 --
 -- Now it's possible to add it incorrectly which results in the vector leaving
 -- the original function's domain.
-grad :: (KnownNat n, Defined dom (RD n), Defined cod R1) => Fn dom (RD n) cod R1 -> Fn dom (RD n) AllOf (RD n)
-grad fn | valid fn = mustHave "already checked valid" $ box $ \x -> fromJust $ gradient fn x
-  where 
-    valid fn = forAll (domain fn) $ \x -> isJust (gradient fn x)
+grad
+  :: (KnownNat n, Defined dom (RD n), Defined cod R1)
+  => Fn dom (RD n) cod R1
+  -> Fn dom (RD n) AllOf (RD n)
+grad fn | valid fn = mustHave "already checked valid" $ box $ \x ->
+  fromJust $ gradient fn x
+  where valid fn = forAll (domain fn) $ \x -> isJust (gradient fn x)
 
 ----------------------------------------------
 --
