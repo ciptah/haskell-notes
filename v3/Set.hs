@@ -4,6 +4,7 @@ module Sets
   , empty
   , member
   , isEmpty
+  , countable
   , intersect
   , complement
   , minus
@@ -11,11 +12,11 @@ module Sets
   , isSubsetOf
   , isDisjoint
   , star
+  , unionAll
+  , intersectAll
   , thereExists
   , forAll
   , rangeOf
-  , unionAll
-  , intersectAll
   )
 where
 -- A set of some Haskell data type.
@@ -63,12 +64,16 @@ a `isDisjoint` b = isEmpty $ a `intersect` b
 -------------- More fancy ops --------------------------
 
 -- From a set S = {a, b, c, ...}
--- Build a set S* = {0, a, b, c, ..., aa, ab, ac, ..., }
--- Also known as a Kleene star.
--- This is intentionally a list, so aaba /= aba /= baaa
--- The second constraint is necessary to make "everything" work.
+-- Build a set S* = {0, a, b, c, ..., aa, ab, ac, ..., } containing
+-- finite ordered sequences of S. Also known as a Kleene star.
 star :: Set w -> Set [w]
 star (Set isToken) = Set (\list -> and $ map isToken list)
+
+unionAll :: (Foldable t) => t (Set w) -> Set w
+unionAll = foldr union empty
+
+intersectAll :: (Foldable t) => t (Set w) -> Set w
+intersectAll = foldr intersect everything
 
 thereExists :: Set w -> (w -> Bool) -> Bool
 thereExists (Set p) pred = (not . isEmpty) $ Set (\x -> p x && pred x)
@@ -79,10 +84,4 @@ forAll set predicate = not $ thereExists set (not . predicate)
 -- Range of a function in a given domain.
 rangeOf :: (Eq y) => (x -> y) -> Set x -> Set y
 rangeOf fn domain = Set $ \y -> thereExists domain $ \x -> y == fn x
-
-unionAll :: Set (Set w) -> Set w
-unionAll sets = Set $ \x -> thereExists sets $ \set -> x `member` set
-
-intersectAll :: Set (Set w) -> Set w
-intersectAll sets = Set $ \x -> forAll sets $ \set -> x `member` set
 

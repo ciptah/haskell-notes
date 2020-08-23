@@ -37,14 +37,14 @@ directions p = Everything
 -- The wiki article uses Rm -> Rn, here we use Rn -> Rm
 -- Technically this is the "derivative error" where dx is our guess for the
 -- actual derivative.
-derivativeFn_
+derivativeErrorFn_
   :: (KnownNat n, Defined dom (RD n), Defined cod R1)
   => Fn dom (RD n) cod R1
   -> RD n
   -> RD n
   -> RD n
   -> R1
-derivativeFn_ fn x dx h =
+derivativeErrorFn_ fn x dx h =
   Vec [norm2 (fn ⬅ (x |+| h) - fn ⬅ x - Vec [dx |.| h]) / norm2 h]
 
 -- Given dx, compute the limit of the above function as h -> 0
@@ -54,9 +54,9 @@ limitDFN
   -> RD n
   -> RD n
   -> Maybe ExtR1
-limitDFN fn x dx = limitFn (safeBox $ derivativeFn_ fn x dx) zeroV
+limitDFN fn x dx = limitFn (safeBox $ derivativeErrorFn_ fn x dx) zeroV
 
--- The gradient at a point is the vector that can push the limitDFN to 0.
+-- The gradient at a point is the dx vector that can push the limitDFN to 0.
 gradient
   :: (KnownNat n, Defined dom (RD n), Defined cod R1)
   => Fn dom (RD n) cod R1
